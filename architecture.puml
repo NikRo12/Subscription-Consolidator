@@ -1,0 +1,41 @@
+@startuml "Subscription-Consolidator"
+!include <C4/C4_Container>
+!include <C4/C4_Context>
+
+title Архитектура анализатора подписок
+
+Person(user, "Пользователь", "Хочет отслеживать свои подписки")
+
+System_Ext(gmail, "Gmail API", "Google почтовый сервис")
+
+Container_Boundary(frontend, "Frontend (React)") {
+    Container(webapp, "Мобильное приложение", "React, TypeScript или что там надо", "SPA для просмотра подписок")
+}
+
+Container_Boundary(backend, "Backend (Go)") {
+    Container(api, "API Server", "Express/FastAPI", "REST API для фронтенда")
+    
+    Container_Boundary(services, "Сервисы") {
+        Container(auth, "Auth Service", "Регистрация/вход через email")
+        Container(parser, "Email Parser", "Gmail API client", "Парсинг писем о подписках")
+        Container(subscription, "Subscription Service", "Управление подписками")
+    }
+    
+    ContainerDb(db, "PostgreSQL", "Основная БД", "Хранит пользователей и подписки")
+    ContainerDb(redis, "Redis", "Кэш и очереди", "Временные данные, сессии")
+}
+
+Rel(user, webapp, "Открывает сайт", "HTTPS")
+Rel(webapp, api, "API запросы", "JSON/HTTPS")
+
+Rel(api, auth, "Аутентификация", "Внутренний вызов")
+Rel(api, subscription, "CRUD подписок", "Внутренний вызов")
+Rel(api, parser, "Запуск парсинга", "Внутренний вызов")
+
+Rel(auth, db, "Сохранение пользователей", "SQL")
+Rel(subscription, db, "Сохранение подписок", "SQL")
+Rel(parser, db, "Сохранение результатов", "SQL")
+
+Rel(parser, redis, "Статус парсинга", "Redis Protocol")
+Rel(parser, gmail, "Чтение писем", "Gmail API/HTTPS")
+@enduml
