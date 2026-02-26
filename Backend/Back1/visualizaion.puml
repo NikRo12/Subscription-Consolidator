@@ -1,0 +1,68 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Внутренняя архитектура компонента Back1 (Clean Architecture)
+
+' --- Внешние сущности (для контекста) ---
+ContainerDb(db, "PostgreSQL", "БД")
+ContainerDb(redis, "Redis", "Очередь")
+
+' --- Границы системы Back1 ---
+Container_Boundary(back1_boundary, "Back1 (Main API)") {
+
+    ' СЛОЙ 1: TRANSPORT (Транспортный)
+    Package "Transport Layer" {
+        Component(http_handler, "HTTP Handlers", "Gin/Echo", "Обработка REST запросов от Frontend")
+        Component(queue_consumer, "Queue Consumer", "Background Worker", "Слушает результаты парсинга из Redis")
+        Component(middleware, "Middleware", "Go", "Аутентификация, Логирование")
+    }
+
+    ' СЛОЙ 2: LOGIC (Бизнес-логика)
+    Package "Logic Layer" {
+        Component(sub_service, "Subscription Service", "Go", "Логика управления подписками")
+        Component(task_service, "Task Service", "Go", "Управление задачами на парсинг")
+    }
+
+    ' СЛОЙ 3: DATA (Доступ к данным)
+    Package "Data Layer" {
+        Component(sub_repo, "Subscription Repo", "Go/SQL", "Доступ к данным подписок")
+    }
+
+    ' СЛОЙ 4: INFRASTRUCTURE (Адаптеры)
+    Package "Infrastructure Layer" {
+        Component(redis_producer, "Redis Client", "Go Lib", "Адаптер для отправки задач в Redis")
+        Component(db_adapter, "Postgres Client", "Gorm/SQLx", "Адаптер подключения к БД")
+    }
+    
+    ' ЯДРО: Models (используются везде)
+    Component(domain, "Structures", "Go Structs", "Сущности: User, Subscription, Task")
+}
+
+' --- Связи (Dependencies Flow) ---
+
+' Внешние входящие потоки
+Rel(redis, queue_consumer, "Push Event", "Результат парсинга")
+
+' Внутренние нисходящие потоки (Delivery -> Service)
+Rel(http_handler, middleware, "Passes")
+Rel(middleware, sub_service, "Executes Use Case")
+Rel(queue_consumer, sub_service, "Updates Subscription")
+
+' Внутренние нисходящие потоки (Service -> Repository/Infra)
+Rel(sub_service, sub_repo, "Get/Save Data")
+
+Rel(sub_service, task_service, "Request Parsing")
+Rel(task_service, redis_producer, "Push Job")
+
+' Внутренние нисходящие потоки (Repository/Infra -> External)
+Rel(sub_repo, db_adapter, "Query")
+Rel(db_adapter, db, "SQL")
+Rel(redis_producer, redis, "LPUSH")
+
+' Зависимости от Доменных моделей (пунктиром, так как это компиляция, не вызов)
+Rel_D(sub_service, domain, "Uses")
+Rel_D(sub_repo, domain, "Uses")
+
+@enduml
