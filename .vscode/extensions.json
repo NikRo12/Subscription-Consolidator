@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "golang.go",
+    "ms-vscode.vscode-typescript-next",
+    "usernamehw.errorlens",
+    "esbenp.prettier-vscode",
+    "EditorConfig.EditorConfig"
+  ]
+}

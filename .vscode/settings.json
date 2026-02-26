@@ -1,0 +1,33 @@
+{
+  "[json][jsonc][markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.organizeImports": "never"
+  },
+  "editor.formatOnSave": false,
+  "eslint.useFlatConfig": true,
+  "eslint.nodePath": "mobile/node_modules",
+  "eslint.runtime": "node",
+  "eslint.workingDirectories": [
+    {
+      "directory": "mobile",
+      "changeProcessCWD": true
+    }
+  ],
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "eslint.probe": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "prettier.requireConfig": true
+}
