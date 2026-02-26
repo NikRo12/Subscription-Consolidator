@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+set -e
+
+echo "[pre-commit] mobile: lint-staged"
+cd "$(dirname "$0")/../mobile"
+yarn lint-staged
+
+echo "[pre-commit] mobile: types"
+yarn types
