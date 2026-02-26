@@ -15,6 +15,8 @@ module.exports = defineConfig([
       "unused-imports": unusedImports,
     },
     rules: {
+      quotes: ["error", "double", { avoidEscape: true, allowTemplateLiterals: true }],
+      "jsx-quotes": ["error", "prefer-double"],
       semi: ["error", "never"],
       "comma-spacing": ["error", { before: false, after: true }],
       "object-curly-spacing": ["error", "always"],
