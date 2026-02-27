@@ -1,98 +1,131 @@
-import { Image } from "expo-image"
-import { Link } from "expo-router"
-import { Platform, StyleSheet } from "react-native"
+import React from "react"
+import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native"
 
-import { HelloWave } from "@/components/hello-wave"
-import ParallaxScrollView from "@/components/parallax-scroll-view"
+import { BrandCard } from "@/components/brand-card"
+import { SubscriptionRow } from "@/components/subscription-row"
 import { ThemedText } from "@/components/themed-text"
 import { ThemedView } from "@/components/themed-view"
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert("Action pressed")} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Ближайшие оплаты
+          </ThemedText>
+          
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalScroll}
+          >
+            <BrandCard
+              title="Netflix"
+              price={12.99}
+              currency="$"
+              paymentDate="3 мар."
+              brandColor="#E50914"
+              iconUrl="https://logo.clearbit.com/netflix.com"
             />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+            <BrandCard
+              title="Spotify"
+              price={10.99}
+              currency="$"
+              paymentDate="7 мар."
+              brandColor="#1DB954"
+              iconUrl="https://logo.clearbit.com/spotify.com"
+            />
+            <BrandCard
+              title="Яндекс Плюс"
+              price={299}
+              currency="₽"
+              paymentDate="12 мар."
+              brandColor="#FC3F1D"
+              iconUrl="https://logo.clearbit.com/yandex.ru"
+            />
+          </ScrollView>
+          
+          <ThemedText type="subtitle" style={[styles.sectionTitle, { marginTop: 32 }]}>
+            Все подписки
+          </ThemedText>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+          <View style={styles.listContainer}>
+            <SubscriptionRow
+              title="Apple iCloud"
+              price={0.99}
+              currency="$"
+              period="мес"
+              paymentDate="15 мар."
+              brandColor="#0A84FF"
+              iconUrl="https://logo.clearbit.com/apple.com"
+            />
+            <SubscriptionRow
+              title="Local Coffee"
+              price={1490}
+              currency="₽"
+              period="мес"
+              paymentDate="18 мар."
+              brandColor="#8B5E3C"
+              iconUrl="https://logo.clearbit.com/starbucks.com"
+            />
+            <SubscriptionRow
+              title="LinkedIn Premium"
+              price={29.99}
+              currency="$"
+              period="мес"
+              paymentDate="20 мар."
+              brandColor="#0A66C2"
+              iconUrl="https://logo.clearbit.com/linkedin.com"
+            />
+            <SubscriptionRow
+              title="YouTube Premium"
+              price={12.99}
+              currency="$"
+              period="мес"
+              paymentDate="22 мар."
+              brandColor="#FF0000"
+              iconUrl="https://logo.clearbit.com/youtube.com"
+            />
+            <SubscriptionRow
+              title="Adobe CC"
+              price={52.99}
+              currency="$"
+              period="мес"
+              paymentDate="25 мар."
+              brandColor="#FA0F00"
+              iconUrl="https://logo.clearbit.com/adobe.com"
+            />
+          </View>
+
+        </ScrollView>
+      </SafeAreaView>
+    </ThemedView>
   )
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
+  container: {
+    flex: 1,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  scrollContent: {
+    paddingTop: 40,
+    paddingBottom: 120,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  sectionTitle: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  horizontalScroll: {
+    paddingHorizontal: 12,
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    gap: 12,
   },
 })
