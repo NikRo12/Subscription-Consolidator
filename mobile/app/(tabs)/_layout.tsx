@@ -22,6 +22,7 @@ export default function TabLayout() {
 
         tabBarStyle: styles.tabBar,
         tabBarItemStyle: styles.tabBarItem,
+        tabBarIconStyle: styles.tabBarIcon,
 
         tabBarBackground: () => (
           <BlurView
@@ -57,14 +58,14 @@ const styles = StyleSheet.create({
   tabBar: {
     position: "absolute",
     bottom: 25,
-    left: 20,
-    right: 20,
+
+    // left и right не работает, пришлось margin использовать для центрирования.
+    marginLeft: "20%", 
+    marginRight: "20%",
+    
     height: 65,
     borderRadius: 35,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "transparent",
     
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
@@ -78,7 +79,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   tabBarItem: {
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    height: 65,
+  },
+  tabBarIcon: {
+    marginTop: 0,
   },
 })
