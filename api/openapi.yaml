@@ -1,0 +1,151 @@
+openapi: 3.0.3
+info:
+  title: SubTrack API
+  description: API для мобильного приложения агрегатора подписок
+  version: 1.0.0
+
+servers:
+  - url: https://api.subtrack.study
+    description: Основной сервер разработки
+
+paths:
+  # Эндпоинт для входа и получения прав на чтение почты
+  /auth/google:
+    post:
+      summary: Авторизация через Google
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                serverAuthCode:
+                  type: string
+                  description: Код от Google SDK для обмена на Refresh Token на бэкенде
+      responses:
+        "200":
+          description: Успешный вход, возвращается внутренний JWT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      email:
+                        type: string
+                      name:
+                        type: string
+
+  # Статус парсинга (для лоадера на фронте)
+  /sync/status:
+    get:
+      summary: Получение статуса сканирования почты
+      tags: [Sync]
+      responses:
+        "200":
+          description: Получение статуса сканирования почты
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [idle, scanning, completed, error]
+                  last_sync:
+                    type: string
+                    format: date-time
+                  found_count:
+                    type: integer
+                  mails_processed:
+                    type: integer
+                  mails_count:
+                    type: integer
+
+  # Основной список подписок
+  /subscriptions:
+    get:
+      summary: Список всех подписок пользователя
+      tags: [Subscriptions]
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Фильтр по категории
+      responses:
+        "200":
+          description: Массив подписок с аналитикой
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_monthly_spend:
+                    type: number
+                    example: 1540.00
+                  currency:
+                    type: string
+                    example: "₽"
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Subscription"
+
+components:
+  schemas:
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Netflix"
+        price:
+          type: number
+          example: 899.00
+        currency:
+          type: string
+          example: "RUB"
+        period:
+          type: string
+          enum: [monthly, yearly]
+        category:
+          type: string
+          enum: [entertainment, work, clouds, food, health, other]
+          example: "entertainment"
+        next_payment_date:
+          type: string
+          format: date
+          example: "2026-03-15"
+        icon_url:
+          type: string
+          example: "https://logo.clearbit.com/netflix.com"
+        brand_color:
+          type: string
+          description: HEX-код для UI (Liquid Glass эффекты)
+          example: "#E50914"
+        is_active:
+          type: boolean
+          example: true
+        description:
+          type: string
+          description: Краткий инсайд из письма
+          example: "Тариф 'Standard', списание через 3 дня"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []
