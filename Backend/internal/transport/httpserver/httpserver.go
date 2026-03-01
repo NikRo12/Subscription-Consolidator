@@ -3,6 +3,7 @@ package httpserver
 import (
 	"net/http"
 
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -11,6 +12,7 @@ type Server struct {
 	config *Config
 	logger *logrus.Logger
 	router *mux.Router
+	store  *store.Store
 }
 
 func New(config *Config) *Server {
@@ -29,6 +31,9 @@ func (s *Server) Start() error {
 	s.logger.Infof("Starting HTTP server on %s", s.config.BindAddr)
 
 	s.configureRoutes()
+	if err := s.configureStore(); err != nil {
+		return err
+	}
 
 	return http.ListenAndServe(s.config.BindAddr, s.router)
 }
@@ -47,6 +52,16 @@ func (s *Server) configureRoutes() {
 	s.router.HandleFunc("/Auth", s.handleAuth())
 	s.router.HandleFunc("/Sync", s.handleSync())
 	s.router.HandleFunc("/Subscriptions", s.handleSubscriptions())
+}
+
+func (s *Server) configureStore() error {
+	st := store.New(s.config.Store)
+	if err := st.Open(); err != nil {
+		return err
+	}
+
+	s.store = st
+	return nil
 }
 
 func (s *Server) handleAuth() http.HandlerFunc {
