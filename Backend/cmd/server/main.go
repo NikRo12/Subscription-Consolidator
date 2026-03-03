@@ -13,7 +13,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&configPath, "config-path", "../../configs/httpserver.toml", "path to config file")
+	flag.StringVar(&configPath, "config-path", "../configs/httpserver.toml", "path to config file")
 }
 
 func main() {
@@ -25,8 +25,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server := httpserver.New(config)
-	if err := server.Start(); err != nil {
+	if err := httpserver.Start(config); err != nil {
 		log.Fatal(err)
 	}
 

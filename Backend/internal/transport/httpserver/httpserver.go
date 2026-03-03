@@ -1,86 +1,34 @@
 package httpserver
 
 import (
+	"database/sql"
 	"net/http"
 
-	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
-	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store/sqlstore"
 )
 
-type Server struct {
-	config *Config
-	logger *logrus.Logger
-	router *mux.Router
-	store  *store.Store
-}
-
-func New(config *Config) *Server {
-	return &Server{
-		config: config,
-		logger: logrus.New(),
-		router: mux.NewRouter(),
-	}
-}
-
-func (s *Server) Start() error {
-	if err := s.configureLogger(); err != nil {
-		return err
-	}
-
-	s.logger.Infof("Starting HTTP server on %s", s.config.BindAddr)
-
-	s.configureRoutes()
-	if err := s.configureStore(); err != nil {
-		return err
-	}
-
-	return http.ListenAndServe(s.config.BindAddr, s.router)
-}
-
-func (s *Server) configureLogger() error {
-	level, err := logrus.ParseLevel(s.config.LogLevel)
+func Start(config *Config) error {
+	db, err := newDB(config.DatabaseDriver, config.DatabaseURL)
 	if err != nil {
 		return err
 	}
 
-	s.logger.SetLevel(level)
-	return nil
+	defer db.Close()
+	store := sqlstore.New(db)
+	s := newServer(store)
+
+	return http.ListenAndServe(config.BindAddr, s)
 }
 
-func (s *Server) configureRoutes() {
-	s.router.HandleFunc("/Auth", s.handleAuth())
-	s.router.HandleFunc("/Sync", s.handleSync())
-	s.router.HandleFunc("/Subscriptions", s.handleSubscriptions())
-}
-
-func (s *Server) configureStore() error {
-	st := store.New(s.config.Store)
-	if err := st.Open(); err != nil {
-		return err
+func newDB(driver, url string) (*sql.DB, error) {
+	db, err := sql.Open(driver, url)
+	if err != nil {
+		return nil, err
 	}
 
-	s.store = st
-	return nil
-}
-
-func (s *Server) handleAuth() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+	if err := db.Ping(); err != nil {
+		return nil, err
 	}
-}
 
-func (s *Server) handleSync() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}
-}
-
-func (s *Server) handleSubscriptions() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}
+	return db, nil
 }
