@@ -2,6 +2,7 @@ package configs
 
 import (
 	"log"
+	"os"
 
 	"github.com/BurntSushi/toml"
 )
@@ -46,6 +47,10 @@ func LoadStorageConfig(configPath string) *StorageConfig {
 	_, err := toml.DecodeFile(configPath, &strconfig)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if url := os.Getenv("DATABASE_URL"); url != "" {
+		strconfig.DatabaseURL = url
 	}
 
 	return &strconfig
