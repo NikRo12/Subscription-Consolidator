@@ -1,0 +1,5 @@
+storage.toml
+.env
+*.exe
+/bin/
+vendor/
