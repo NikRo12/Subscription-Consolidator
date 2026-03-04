@@ -1,4 +1,4 @@
-storage.toml
+.toml
 .env
 *.exe
 /bin/
