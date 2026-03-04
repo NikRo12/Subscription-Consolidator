@@ -4,28 +4,27 @@ import (
 	"flag"
 	"log"
 
-	"github.com/BurntSushi/toml"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/configs"
 	httpserver "github.com/NikRo12/Subscription-Consolidator/Backend/internal/transport/httpserver"
 )
 
 var (
-	configPath string
+	serverConfigPath  string
+	storageConfigPath string
 )
 
 func init() {
-	flag.StringVar(&configPath, "config-path", "../configs/httpserver.toml", "path to config file")
+	flag.StringVar(&serverConfigPath, "server_config-path", "../configs/server.toml", "path to server config file")
+	flag.StringVar(&storageConfigPath, "storage_config-path", "../configs/storage.toml", "path to storage config file")
 }
 
 func main() {
 	flag.Parse()
 
-	config := httpserver.NewConfig()
-	_, err := toml.DecodeFile(configPath, config)
-	if err != nil {
-		log.Fatal(err)
-	}
+	srvConfig := configs.LoadServerConfig(serverConfigPath)
+	strConfig := configs.LoadStorageConfig(storageConfigPath)
 
-	if err := httpserver.Start(config); err != nil {
+	if err := httpserver.Start(srvConfig, strConfig); err != nil {
 		log.Fatal(err)
 	}
 

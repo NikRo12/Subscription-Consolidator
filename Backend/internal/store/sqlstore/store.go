@@ -10,6 +10,7 @@ import (
 type SqlStore struct {
 	db             *sql.DB
 	UserRepository *SqlUserRepository
+	SubRepository  *SqlSubRepository
 }
 
 func New(db *sql.DB) *SqlStore {
@@ -25,4 +26,13 @@ func (s *SqlStore) User() store.UserRepository {
 
 	s.UserRepository = &SqlUserRepository{store: s}
 	return s.UserRepository
+}
+
+func (s *SqlStore) Sub() store.SubRepository {
+	if s.SubRepository != nil {
+		return s.SubRepository
+	}
+
+	s.SubRepository = &SqlSubRepository{store: s}
+	return s.SubRepository
 }

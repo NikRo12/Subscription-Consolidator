@@ -14,10 +14,10 @@ type server struct {
 	store  store.Store
 }
 
-func newServer(store store.Store) *server {
+func newServer(store store.Store, logger *logrus.Logger) *server {
 	s := &server{
 		router: mux.NewRouter(),
-		logger: logrus.New(),
+		logger: logger,
 		store:  store,
 	}
 
