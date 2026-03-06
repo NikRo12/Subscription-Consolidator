@@ -1,8 +1,11 @@
 package httpserver
 
 import (
+	"encoding/json"
 	"net/http"
 
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/models"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -30,11 +33,60 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
-	s.router.HandleFunc("/users", s.handleUsersCreate()).Methods("Post")
+	s.router.HandleFunc("/auth/google", s.handleGoogleAuth()).Methods("Post")
 }
 
-func (s *server) handleUsersCreate() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *server) handleGoogleAuth() http.HandlerFunc {
+	type request struct {
+		ServerAuthCode string `json:"serverAuthCode"`
+	}
 
+	type response struct {
+		Token string      `json:"token"`
+		User  models.User `json:"user"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		req := &request{}
+		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+			s.error(w, r, http.StatusBadRequest, err)
+			return
+		}
+
+		googleUser, err := services.ExchangeCodeWithGoogle(req.ServerAuthCode)
+		if err != nil {
+			s.error(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		u := &models.User{
+			Email:        googleUser.Email,
+			RefreshToken: googleUser.RefreshToken,
+		}
+
+		if err := s.store.User().FindOrCreateUser(u); err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		token, err := services.GenerateJWT(u.ID)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		u.Sanitize()
+		s.respond(w, r, http.StatusOK, response{Token: token, User: *u})
+	}
+}
+
+func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err error) {
+	s.respond(w, r, code, map[string]string{"error": err.Error()})
+}
+
+func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+	w.WriteHeader(code)
+	if data != nil {
+		json.NewEncoder(w).Encode(data)
 	}
 }

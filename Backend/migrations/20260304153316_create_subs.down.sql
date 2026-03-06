@@ -1,1 +1,1 @@
-DROP TABLE subs
+DROP TABLE subs;

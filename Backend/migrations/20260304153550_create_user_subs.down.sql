@@ -1,1 +1,1 @@
-DROP TABLE users_subs
+DROP TABLE user_subs;

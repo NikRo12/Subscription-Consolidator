@@ -6,9 +6,9 @@ import (
 )
 
 type User struct {
-	ID           int
-	Email        string
-	RefreshToken string
+	ID           int    `json:"id"`
+	Email        string `json:"email"`
+	RefreshToken string `json:"refreshToken,omitempty"`
 }
 
 func (u *User) Validate() error {
@@ -16,4 +16,8 @@ func (u *User) Validate() error {
 		u,
 		validation.Field(&u.Email, validation.Required, is.Email),
 	)
+}
+
+func (u *User) Sanitize() {
+	u.RefreshToken = ""
 }
