@@ -38,12 +38,12 @@ func (s *server) configureRouter() {
 
 func (s *server) handleGoogleAuth() http.HandlerFunc {
 	type request struct {
-		ServerAuthCode string `json:"serverAuthCode"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	type response struct {
-		Token string      `json:"token"`
-		User  models.User `json:"user"`
+		JWT  string      `json:"token"`
+		User models.User `json:"user"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -53,15 +53,15 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		googleUser, err := services.ExchangeCodeWithGoogle(req.ServerAuthCode)
-		if err != nil {
-			s.error(w, r, http.StatusUnauthorized, err)
-			return
-		}
+		//googleUser, err := services.ExchangeCodeWithGoogle(req.RefreshToken)
+		// if err != nil {
+		// 	s.error(w, r, http.StatusUnauthorized, err)
+		// 	return
+		// }
 
 		u := &models.User{
-			Email:        googleUser.Email,
-			RefreshToken: googleUser.RefreshToken,
+			Email:        "user@example.ru",
+			RefreshToken: "123456789",
 		}
 
 		if err := s.store.User().FindOrCreateUser(u); err != nil {
@@ -69,14 +69,14 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		token, err := services.GenerateJWT(u.ID)
+		JWT, err := services.GenerateJWT(u.ID)
 		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
 		u.Sanitize()
-		s.respond(w, r, http.StatusOK, response{Token: token, User: *u})
+		s.respond(w, r, http.StatusOK, response{JWT: JWT, User: *u})
 	}
 }
 

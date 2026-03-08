@@ -7,47 +7,74 @@ type SqlSubRepository struct {
 }
 
 func (r *SqlSubRepository) CreateSub(s *models.Subscription) error {
-	if err := s.Validate(); err != nil {
-		return err
-	}
-
 	return r.store.db.QueryRow(
-		"INSERT INTO subs (name, url, price) VALUES ($1, $2, $3) RETURNING id",
-		s.Name,
-		s.URL,
-		s.Price,
+		`INSERT INTO subs (
+    		title,
+    		currency,
+    		category,
+    		icon_url,
+    		brand_color,
+    		description
+		) VALUES (
+    		$1,  -- title
+    		$2,  -- currency
+    		$3,  -- category
+    		$4,  -- icon_url
+    		$5,  -- brand_color
+    		$6   -- description
+		)
+		RETURNING id;`,
+		s.Title,
+		s.Currency,
+		s.Category,
+		s.IconURL,
+		s.BrandColor,
+		s.Description,
 	).Scan(&s.ID)
 }
 
-func (r *SqlSubRepository) GetSubByName(name string) (*models.Subscription, error) {
-	s := &models.Subscription{}
-
-	if err := r.store.db.QueryRow(
-		"SELECT id, name, url, price FROM subs WHERE name = $1",
-		name,
-	).Scan(&s.Name,
-		&s.ID,
-		&s.URL,
-		&s.Price,
-	); err != nil {
-		return nil, err
-	}
-
-	return s, nil
-}
-
 func (r *SqlSubRepository) CreateUserSub(us *models.UserSubscription) error {
-	return r.store.db.QueryRow("INSERT INTO user_subs (user_id, sub_id, start_at, end_at) VALUES ($1, $2, $3, $4) RETURNING id",
+	_, err := r.store.db.Exec(
+		`INSERT INTO user_subs (
+			user_id,
+			sub_id, 
+			price,
+			period, 
+			next_payment_date, 
+			is_active
+		) VALUES (
+		 	$1, 
+			$2, 
+			$3, 
+			$4,
+			$5, 
+			$6
+		)`,
 		us.UserID,
 		us.SubID,
-		us.StartAt,
-		us.EndAt,
-	).Scan(&us.ID)
+		us.Price,
+		us.Period,
+		us.NextPaymentDate,
+		us.IsActive,
+	)
+
+	return err
 }
 
-func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Enrty, error) {
+func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Entry, error) {
 	rows, err := r.store.db.Query(`
-		SELECT u.id, u.email, s.name, us.start_at, us.end_at
+		SELECT 
+			u.id, 
+			s.title, 
+			us.price, 
+			s.currency, 
+			us.period, 
+			s.category,
+			us.next_payment_date,
+			s.icon_url,
+			s.brand_color,
+			us.is_active,
+			s.description
 		FROM subs s 
 		JOIN user_subs us ON s.id = us.sub_id 
 		JOIN users u ON u.id = us.user_id
@@ -60,14 +87,26 @@ func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Enrty, error
 
 	defer rows.Close()
 
-	subs := make([]*models.Enrty, 0)
+	subs := make([]*models.Entry, 0)
 
 	for rows.Next() {
-		s := &models.Enrty{}
-		if err := rows.Scan(&s.UserID, &s.Email, &s.SubName, &s.StartAt, &s.EndAt); err != nil {
+		entry := &models.Entry{}
+		if err := rows.Scan(
+			&entry.UserID,
+			&entry.Title,
+			&entry.Price,
+			&entry.Currency,
+			&entry.Period,
+			&entry.Category,
+			&entry.NextPaymentDate,
+			&entry.IconURL,
+			&entry.BrandColor,
+			&entry.IsActive,
+			&entry.Description,
+		); err != nil {
 			return nil, err
 		}
-		subs = append(subs, s)
+		subs = append(subs, entry)
 	}
 	return subs, nil
 }

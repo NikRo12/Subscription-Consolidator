@@ -9,30 +9,30 @@ import (
 
 type SqlStore struct {
 	db             *sql.DB
-	UserRepository *SqlUserRepository
-	SubRepository  *SqlSubRepository
+	userRepository *SqlUserRepository
+	subRepository  *SqlSubRepository
 }
 
-func New(db *sql.DB) *SqlStore {
+func NewSqlStore(db *sql.DB) *SqlStore {
 	return &SqlStore{
 		db: db,
 	}
 }
 
 func (s *SqlStore) User() store.UserRepository {
-	if s.UserRepository != nil {
-		return s.UserRepository
+	if s.userRepository != nil {
+		return s.userRepository
 	}
 
-	s.UserRepository = &SqlUserRepository{store: s}
-	return s.UserRepository
+	s.userRepository = &SqlUserRepository{store: s}
+	return s.userRepository
 }
 
 func (s *SqlStore) Sub() store.SubRepository {
-	if s.SubRepository != nil {
-		return s.SubRepository
+	if s.subRepository != nil {
+		return s.subRepository
 	}
 
-	s.SubRepository = &SqlSubRepository{store: s}
-	return s.SubRepository
+	s.subRepository = &SqlSubRepository{store: s}
+	return s.subRepository
 }

@@ -16,7 +16,7 @@ func Start(srvConfig *configs.ServerConfig, strConfig *configs.StorageConfig) er
 	}
 
 	defer db.Close()
-	store := sqlstore.New(db)
+	store := sqlstore.NewSqlStore(db)
 
 	logger, err := configureLogger(srvConfig.LogLevel)
 	if err != nil {

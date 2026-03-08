@@ -1,20 +1,28 @@
 package models
 
-import (
-	validation "github.com/go-ozzo/ozzo-validation"
-	"github.com/go-ozzo/ozzo-validation/is"
+type Period string
+type Category string
+
+const (
+	Monthly Period = "monthly"
+	Yearly  Period = "yearly"
+)
+
+const (
+	Entertainment Category = "entertainment"
+	Work          Category = "work"
+	Clouds        Category = "clouds"
+	Food          Category = "food"
+	Health        Category = "health"
+	Other         Category = "other"
 )
 
 type Subscription struct {
-	ID    int
-	Name  string
-	URL   string
-	Price int
-}
-
-func (s *Subscription) Validate() error {
-	return validation.ValidateStruct(
-		s,
-		validation.Field(&s.URL, validation.Required, is.URL),
-	)
+	ID          int
+	Title       string
+	Currency    string
+	Category    Category
+	IconURL     string
+	BrandColor  string
+	Description string
 }
