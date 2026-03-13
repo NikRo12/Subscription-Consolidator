@@ -1,16 +1,11 @@
 package redis
 
 import (
-	"errors"
 	"os"
 
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/commonerrors"
 	"github.com/joho/godotenv"
 )
-
-/*
-This error says that the root directory doesn't have .env-file
-*/
-var NoENVFile = errors.New("Cannot find .env file in project's root directory")
 
 /*
 This function load variables from .env file to env-variables of the current process
@@ -19,7 +14,7 @@ If there're no REDIS_ADDR variable, it returns `localhost:6379`
 */
 func GetRedisAddr() (string, error) {
 	if err := godotenv.Load(); err != nil {
-		return "", NoENVFile
+		return "", commonerrors.NoENVFile
 	}
 	addr := os.Getenv("REDIS_ADDR")
 	if addr == "" {
