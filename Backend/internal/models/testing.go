@@ -29,8 +29,8 @@ func TestUserSubscription(t *testing.T) *UserSubscription {
 	return &UserSubscription{
 		UserID:          1,
 		SubID:           1,
-		Period:          "monthly",
 		Price:           decimal.NewFromFloat(899.99),
+		Period:          "monthly",
 		NextPaymentDate: time.Now(),
 		IsActive:        true,
 	}

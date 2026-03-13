@@ -9,8 +9,8 @@ import (
 type UserSubscription struct {
 	UserID          int
 	SubID           int
-	Period          Period
 	Price           decimal.Decimal
+	Period          Period
 	NextPaymentDate time.Time
 	IsActive        bool
 }

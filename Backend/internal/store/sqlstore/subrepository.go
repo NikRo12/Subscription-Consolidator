@@ -64,7 +64,7 @@ func (r *SqlSubRepository) CreateUserSub(us *models.UserSubscription) error {
 func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Entry, error) {
 	rows, err := r.store.db.Query(`
 		SELECT 
-			u.id, 
+			s.id, 
 			s.title, 
 			us.price, 
 			s.currency, 

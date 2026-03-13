@@ -1,8 +1,11 @@
 package httpserver
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/models"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services"
@@ -34,6 +37,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) configureRouter() {
 	s.router.HandleFunc("/auth/google", s.handleGoogleAuth()).Methods("Post")
+	s.router.HandleFunc("/subscriptions", s.authenticateUser(s.handleSubscriptions())).Methods("Get")
 }
 
 func (s *server) handleGoogleAuth() http.HandlerFunc {
@@ -77,6 +81,43 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 
 		u.Sanitize()
 		s.respond(w, r, http.StatusOK, response{JWT: JWT, User: *u})
+	}
+}
+
+func (s *server) handleSubscriptions() http.HandlerFunc {
+	type response struct{}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("user_id").(int)
+
+		entries, err := s.store.Sub().GetAllSubsForUser(userID)
+		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		s.respond(w, r, http.StatusOK, entries)
+	}
+}
+
+func (s *server) authenticateUser(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			s.error(w, r, http.StatusUnauthorized, errors.New("no token"))
+			return
+		}
+
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+		userID, err := services.ParseJWT(tokenString)
+		if err != nil {
+			s.error(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user_id", userID)
+		next(w, r.WithContext(ctx))
 	}
 }
 
