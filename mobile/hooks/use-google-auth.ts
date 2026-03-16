@@ -20,6 +20,7 @@ export function useGoogleAuth() {
 
   const [request, authResponse, promptAsync] = Google.useAuthRequest({
     webClientId: Config.google.webClientId,
+    iosClientId: Config.google.iosClientId,
     responseType: Platform.OS === "web" ? "id_token" : "code",
     scopes: ["openid", "profile", "email"],
     shouldAutoExchangeCode: false,
