@@ -1,5 +1,4 @@
 CREATE TABLE users (
-    id bigserial not null primary key,
-    email varchar not null unique,
-    refresh_token varchar not null 
-)
+    id            SERIAL PRIMARY KEY,
+    refresh_token VARCHAR(255) UNIQUE NOT NULL
+);

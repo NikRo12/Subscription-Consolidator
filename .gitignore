@@ -1,0 +1,6 @@
+*.toml
+.env
+*.exe
+/bin/
+build/
+vendor/

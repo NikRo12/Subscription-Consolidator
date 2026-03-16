@@ -1,86 +1,52 @@
 package httpserver
 
 import (
+	"database/sql"
 	"net/http"
 
-	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
-	"github.com/gorilla/mux"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store/sqlstore"
 	"github.com/sirupsen/logrus"
 )
 
-type Server struct {
-	config *Config
-	logger *logrus.Logger
-	router *mux.Router
-	store  *store.Store
-}
-
-func New(config *Config) *Server {
-	return &Server{
-		config: config,
-		logger: logrus.New(),
-		router: mux.NewRouter(),
-	}
-}
-
-func (s *Server) Start() error {
-	if err := s.configureLogger(); err != nil {
-		return err
-	}
-
-	s.logger.Infof("Starting HTTP server on %s", s.config.BindAddr)
-
-	s.configureRoutes()
-	if err := s.configureStore(); err != nil {
-		return err
-	}
-
-	return http.ListenAndServe(s.config.BindAddr, s.router)
-}
-
-func (s *Server) configureLogger() error {
-	level, err := logrus.ParseLevel(s.config.LogLevel)
+func Start(databaseDriver, databaseURL, logLevel, bindAddr string) error {
+	db, err := newDB(databaseDriver, databaseURL)
 	if err != nil {
 		return err
 	}
 
-	s.logger.SetLevel(level)
-	return nil
-}
+	defer db.Close()
+	store := sqlstore.NewSqlStore(db)
 
-func (s *Server) configureRoutes() {
-	s.router.HandleFunc("/Auth", s.handleAuth())
-	s.router.HandleFunc("/Sync", s.handleSync())
-	s.router.HandleFunc("/Subscriptions", s.handleSubscriptions())
-}
-
-func (s *Server) configureStore() error {
-	st := store.New(s.config.Store)
-	if err := st.Open(); err != nil {
+	logger, err := configureLogger(logLevel)
+	if err != nil {
 		return err
 	}
+	s := newServer(store, logger)
 
-	s.store = st
-	return nil
+	return http.ListenAndServe(bindAddr, s)
 }
 
-func (s *Server) handleAuth() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+func newDB(driver, url string) (*sql.DB, error) {
+	db, err := sql.Open(driver, url)
+	if err != nil {
+		return nil, err
 	}
+
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }
 
-func (s *Server) handleSync() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+func configureLogger(logLevel string) (*logrus.Logger, error) {
+	level, err := logrus.ParseLevel(logLevel)
+	if err != nil {
+		return nil, err
 	}
-}
 
-func (s *Server) handleSubscriptions() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	}
+	logger := logrus.New()
+	logger.SetLevel(level)
+
+	return logger, nil
 }
