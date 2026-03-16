@@ -1,2 +1,0 @@
-database_driver = "postgres"
-database_url = ""
