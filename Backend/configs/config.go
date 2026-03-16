@@ -10,15 +10,8 @@ func GetServerHost() string {
 	return host
 }
 
-func GetDBDriver() string {
-	driver := os.Getenv("DB_DRIVER")
-	if driver == "" {
-		driver = "postgres"
-	}
-	return driver
-}
-
 func GetDBURL() string {
+	//TODO add empty value handler
 	url := os.Getenv("DB_URL")
 	return url
 }
@@ -29,4 +22,10 @@ func GetLogLevel() string {
 		level = "DEBUG"
 	}
 	return level
+}
+
+func GetJWTSecret() string {
+	//TODO add empty value handler
+	secret := os.Getenv("JWT_SECRET")
+	return secret
 }

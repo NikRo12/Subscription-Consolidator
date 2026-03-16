@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/models"
-	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/jwt"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -42,7 +42,7 @@ func (s *server) configureRouter() {
 
 func (s *server) handleGoogleAuth() http.HandlerFunc {
 	type request struct {
-		RefreshToken string `json:"refresh_token"`
+		ServerAuthCode string `json:"serverAuthCode"`
 	}
 
 	type response struct {
@@ -57,16 +57,17 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		u := &models.User{
-			RefreshToken: req.RefreshToken,
-		}
+		// refreshToken := google.ChangeRefreshToken()
+		// accessToken := google.ChangeAccessToken()
+
+		u := &models.User{}
 
 		if err := s.store.User().FindOrCreateUser(u); err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		JWT, err := services.GenerateJWT(u.ID)
+		JWT, err := jwt.GenerateJWT(u.ID)
 		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
@@ -103,7 +104,7 @@ func (s *server) authenticateUser(next http.HandlerFunc) http.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		userID, err := services.ParseJWT(tokenString)
+		userID, err := jwt.ParseJWT(tokenString)
 		if err != nil {
 			s.error(w, r, http.StatusUnauthorized, err)
 			return

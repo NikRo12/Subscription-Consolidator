@@ -8,8 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Start(databaseDriver, databaseURL, logLevel, bindAddr string) error {
-	db, err := newDB(databaseDriver, databaseURL)
+func Start(databaseURL, logLevel, bindAddr string) error {
+	db, err := newDB(databaseURL)
 	if err != nil {
 		return err
 	}
@@ -26,8 +26,8 @@ func Start(databaseDriver, databaseURL, logLevel, bindAddr string) error {
 	return http.ListenAndServe(bindAddr, s)
 }
 
-func newDB(driver, url string) (*sql.DB, error) {
-	db, err := sql.Open(driver, url)
+func newDB(url string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", url)
 	if err != nil {
 		return nil, err
 	}

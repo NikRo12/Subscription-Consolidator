@@ -18,7 +18,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	if err := httpserver.Start(configs.GetDBDriver(), configs.GetDBURL(), configs.GetLogLevel(), configs.GetServerHost()); err != nil {
+	if err := httpserver.Start(configs.GetDBURL(), configs.GetLogLevel(), configs.GetServerHost()); err != nil {
 		log.Fatal(err)
 	}
 
