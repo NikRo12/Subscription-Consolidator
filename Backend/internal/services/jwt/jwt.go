@@ -1,13 +1,13 @@
-package services
+package jwt
 
 import (
-	"os"
 	"time"
 
+	"github.com/NikRo12/Subscription-Consolidator/Backend/configs"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var jwtSecret = []byte(configs.GetJWTSecret())
 
 func GenerateJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{
