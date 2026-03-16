@@ -4,13 +4,12 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/NikRo12/Subscription-Consolidator/Backend/configs"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store/sqlstore"
 	"github.com/sirupsen/logrus"
 )
 
-func Start(srvConfig *configs.ServerConfig, strConfig *configs.StorageConfig) error {
-	db, err := newDB(strConfig.DatabaseDriver, strConfig.DatabaseURL)
+func Start(databaseDriver, databaseURL, logLevel, bindAddr string) error {
+	db, err := newDB(databaseDriver, databaseURL)
 	if err != nil {
 		return err
 	}
@@ -18,13 +17,13 @@ func Start(srvConfig *configs.ServerConfig, strConfig *configs.StorageConfig) er
 	defer db.Close()
 	store := sqlstore.NewSqlStore(db)
 
-	logger, err := configureLogger(srvConfig.LogLevel)
+	logger, err := configureLogger(logLevel)
 	if err != nil {
 		return err
 	}
 	s := newServer(store, logger)
 
-	return http.ListenAndServe(srvConfig.BindAddr, s)
+	return http.ListenAndServe(bindAddr, s)
 }
 
 func newDB(driver, url string) (*sql.DB, error) {

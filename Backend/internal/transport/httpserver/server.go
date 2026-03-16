@@ -57,15 +57,8 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		//googleUser, err := services.ExchangeCodeWithGoogle(req.RefreshToken)
-		// if err != nil {
-		// 	s.error(w, r, http.StatusUnauthorized, err)
-		// 	return
-		// }
-
 		u := &models.User{
-			Email:        "user@example.ru",
-			RefreshToken: "123456789",
+			RefreshToken: req.RefreshToken,
 		}
 
 		if err := s.store.User().FindOrCreateUser(u); err != nil {

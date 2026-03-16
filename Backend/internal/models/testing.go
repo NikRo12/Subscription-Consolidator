@@ -9,7 +9,6 @@ import (
 
 func TestUser(t *testing.T) *User {
 	return &User{
-		Email:        "user@example.org",
 		RefreshToken: "123456789",
 	}
 }

@@ -11,22 +11,17 @@ type SqlUserRepository struct {
 }
 
 func (r *SqlUserRepository) CreateUser(u *models.User) error {
-	if err := u.Validate(); err != nil {
-		return err
-	}
-
 	return r.store.db.QueryRow(
-		"INSERT INTO users (email, refresh_token) VALUES ($1, $2) RETURNING id",
-		u.Email,
+		"INSERT INTO users (refresh_token) VALUES ($1) RETURNING id",
 		u.RefreshToken,
 	).Scan(&u.ID)
 }
 
 func (r *SqlUserRepository) FindOrCreateUser(u *models.User) error {
 	err := r.store.db.QueryRow(
-		"SELECT id, email, refresh_token FROM users WHERE email = $1",
-		u.Email,
-	).Scan(&u.ID, &u.Email, &u.RefreshToken)
+		"SELECT id, refresh_token FROM users WHERE id = $1",
+		u.ID,
+	).Scan(&u.ID, &u.RefreshToken)
 
 	if err == nil {
 		return nil
@@ -37,20 +32,18 @@ func (r *SqlUserRepository) FindOrCreateUser(u *models.User) error {
 	}
 
 	return r.store.db.QueryRow(
-		"INSERT INTO users (email, refresh_token) VALUES ($1, $2) RETURNING id",
-		u.Email,
+		"INSERT INTO users (refresh_token) VALUES ($1) RETURNING id",
 		u.RefreshToken,
 	).Scan(&u.ID)
 }
 
-func (r *SqlUserRepository) GetUserByEmail(email string) (*models.User, error) {
+func (r *SqlUserRepository) GetUserByID(id int) (*models.User, error) {
 	u := &models.User{}
 
 	if err := r.store.db.QueryRow(
-		"SELECT id, email, refresh_token FROM users WHERE email = $1",
-		email,
+		"SELECT id, refresh_token FROM users WHERE id = $1",
+		id,
 	).Scan(&u.ID,
-		&u.Email,
 		&u.RefreshToken,
 	); err != nil {
 		return nil, err

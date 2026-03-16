@@ -1,57 +1,32 @@
 package configs
 
-import (
-	"log"
-	"os"
+import "os"
 
-	"github.com/BurntSushi/toml"
-)
-
-type ServerConfig struct {
-	BindAddr string `toml:"bind_addr"`
-	LogLevel string `toml:"log_level"`
+func GetServerHost() string {
+	host := os.Getenv("HOST")
+	if host == "" {
+		host = "localhost:8080"
+	}
+	return host
 }
 
-type StorageConfig struct {
-	DatabaseDriver string `toml:"database_driver"`
-	DatabaseURL    string `toml:"database_url"`
+func GetDBDriver() string {
+	driver := os.Getenv("DB_DRIVER")
+	if driver == "" {
+		driver = "postgres"
+	}
+	return driver
 }
 
-func NewServerConfig() *ServerConfig {
-	return &ServerConfig{
-		BindAddr: ":8080",
-		LogLevel: "debug",
-	}
+func GetDBURL() string {
+	url := os.Getenv("DB_URL")
+	return url
 }
 
-func NewStorageConfig() *StorageConfig {
-	return &StorageConfig{
-		DatabaseDriver: "postgres",
+func GetLogLevel() string {
+	level := os.Getenv("LOG_LEVEL")
+	if level == "" {
+		level = "DEBUG"
 	}
-}
-
-func LoadServerConfig(configPath string) *ServerConfig {
-	var srvconfig ServerConfig
-
-	_, err := toml.DecodeFile(configPath, &srvconfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return &srvconfig
-}
-
-func LoadStorageConfig(configPath string) *StorageConfig {
-	var strconfig StorageConfig
-
-	_, err := toml.DecodeFile(configPath, &strconfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if url := os.Getenv("DATABASE_URL"); url != "" {
-		strconfig.DatabaseURL = url
-	}
-
-	return &strconfig
+	return level
 }
