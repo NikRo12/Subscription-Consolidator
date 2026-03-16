@@ -1,7 +1,10 @@
 package models
 
 type User struct {
-	ID           int
-	Email        string
-	RefreshToken string
+	ID           int    `json:"id"`
+	RefreshToken string `json:"refreshToken,omitempty"`
+}
+
+func (u *User) Sanitize() {
+	u.RefreshToken = ""
 }

@@ -4,29 +4,21 @@ import (
 	"flag"
 	"log"
 
-	"github.com/BurntSushi/toml"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/configs"
 	httpserver "github.com/NikRo12/Subscription-Consolidator/Backend/internal/transport/httpserver"
-)
-
-var (
-	configPath string
+	"github.com/joho/godotenv"
 )
 
 func init() {
-	flag.StringVar(&configPath, "config-path", "../../configs/httpserver.toml", "path to config file")
+	if err := godotenv.Load("/home/nikita081105/develope/Subscription-Consolidator/Backend/.env"); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
 	flag.Parse()
 
-	config := httpserver.NewConfig()
-	_, err := toml.DecodeFile(configPath, config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	server := httpserver.New(config)
-	if err := server.Start(); err != nil {
+	if err := httpserver.Start(configs.GetDBDriver(), configs.GetDBURL(), configs.GetLogLevel(), configs.GetServerHost()); err != nil {
 		log.Fatal(err)
 	}
 
