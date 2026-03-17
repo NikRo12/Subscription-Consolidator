@@ -16,7 +16,7 @@ func TestPushTask(t *testing.T) {
 	conn := NewRedisConn(db)
 	ctx := context.Background()
 
-	task := &models.Task{TaskID: "1", UserID: "user_123"}
+	task := &models.Task{UserID: 1}
 	payload, _ := json.Marshal(task)
 
 	t.Run("Success", func(t *testing.T) {
@@ -44,11 +44,10 @@ func TestGetTask(t *testing.T) {
 	ctx := context.Background()
 
 	task := &models.Task{
-		TaskID:       "1",
-		UserID:       "user_123",
+		UserID:       1,
 		RefreshToken: "ivj[1d09]",
 		AccessToken:  "lq1ovok",
-		MessageID:    "1232"}
+		MessageID:    0}
 
 	payload, _ := json.Marshal(task)
 
@@ -58,7 +57,6 @@ func TestGetTask(t *testing.T) {
 		result, err := conn.GetTask(ctx)
 
 		assert.NoError(t, err)
-		assert.Equal(t, task.TaskID, result.TaskID)
 		assert.Equal(t, task.UserID, result.UserID)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

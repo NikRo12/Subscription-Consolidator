@@ -7,8 +7,6 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(configs.GetJWTSecret())
-
 func GenerateJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
@@ -16,12 +14,12 @@ func GenerateJWT(userID int) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString([]byte(configs.GetJWTSecret()))
 }
 
 func ParseJWT(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(jwtSecret), nil
+		return []byte(configs.GetJWTSecret()), nil
 	})
 
 	if err != nil {

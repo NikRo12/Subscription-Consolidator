@@ -1,8 +1,12 @@
 package sqlstore_test
 
 import (
+	"log"
 	"os"
 	"testing"
+
+	"github.com/NikRo12/Subscription-Consolidator/Backend/configs"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -11,19 +15,13 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	databaseDriver = os.Getenv("DATABASE_DRIVER")
-	if databaseDriver == "" {
-		databaseDriver = "postgres"
+	if err := godotenv.Load("/home/nikita081105/develope/Subscription-Consolidator/Backend/.env"); err != nil {
+		log.Fatal(err)
 	}
 
-	databaseURL = os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		databaseURL = `host=localhost port=5432 
-			user=nikita081105 
-			password=Elfhybr081105 
-			dbname=subconapp_test 
-			sslmode=disable`
-	}
+	databaseDriver = "postgres"
+
+	databaseURL = configs.GetTestDBURL()
 
 	os.Exit(m.Run())
 }

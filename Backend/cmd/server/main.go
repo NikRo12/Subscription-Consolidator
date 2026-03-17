@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	if err := godotenv.Load("/home/nikita081105/develope/Subscription-Consolidator/Backend/.env"); err != nil {
+	if err := godotenv.Load(".env"); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -18,7 +18,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	if err := httpserver.Start(configs.GetDBURL(), configs.GetLogLevel(), configs.GetServerHost()); err != nil {
+	if err := httpserver.Start(configs.GetDBURL(), configs.GetLogLevel(), configs.GetServerHost(), configs.GetRedisAddr()); err != nil {
 		log.Fatal(err)
 	}
 
