@@ -7,7 +7,7 @@ import (
 )
 
 type Entry struct {
-	UserID          int             `json:"uuid"`
+	SubID           int             `json:"uuid"`
 	Title           string          `json:"title"`
 	Price           decimal.Decimal `json:"price"`
 	Currency        string          `json:"currency"`

@@ -92,7 +92,7 @@ func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Entry, error
 	for rows.Next() {
 		entry := &models.Entry{}
 		if err := rows.Scan(
-			&entry.UserID,
+			&entry.SubID,
 			&entry.Title,
 			&entry.Price,
 			&entry.Currency,

@@ -18,7 +18,7 @@ func getMockParseResult() *models.ParseResult {
 		UserID: 123,
 		EntryData: []models.Entry{
 			{
-				UserID:          123,
+				SubID:           123,
 				Title:           "Netflix",
 				Price:           decimal.NewFromFloat(15.99),
 				Currency:        "USD",

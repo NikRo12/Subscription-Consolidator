@@ -16,6 +16,12 @@ func GetDBURL() string {
 	return url
 }
 
+func GetTestDBURL() string {
+	//TODO add empty value handler
+	url := os.Getenv("TEST_DB_URL")
+	return url
+}
+
 func GetLogLevel() string {
 	level := os.Getenv("LOG_LEVEL")
 	if level == "" {
@@ -28,4 +34,12 @@ func GetJWTSecret() string {
 	//TODO add empty value handler
 	secret := os.Getenv("JWT_SECRET")
 	return secret
+}
+
+func GetRedisAddr() string {
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
+		addr = "localhost:6379"
+	}
+	return addr
 }
