@@ -1,114 +1,11 @@
-import React from "react"
-import { SafeAreaView, ScrollView, StyleSheet, View } from "react-native"
+import React, { useMemo } from "react"
+import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, View } from "react-native"
 
 import { BrandCard } from "@/components/brand-card"
 import { SubscriptionRow } from "@/components/subscription-row"
 import { ThemedText } from "@/components/themed-text"
 import { ThemedView } from "@/components/themed-view"
-
-type ServerSubscription = {
-  id: string
-  title: string
-  price: number
-  currency: string
-  period: string
-  nextPaymentAt: string
-  brandColor: string
-  iconUrl: string
-}
-
-// Хардкод ответа сервера.
-// TODO: заменить на реальный API когда он будет готов.
-const serverResponse: { subscriptions: ServerSubscription[] } = {
-  subscriptions: [
-    {
-      id: "netflix",
-      title: "Netflix",
-      price: 12.99,
-      currency: "$",
-      period: "мес",
-      nextPaymentAt: "2026-03-03",
-      brandColor: "#E50914",
-      iconUrl: "https://logo.clearbit.com/netflix.com",
-    },
-    {
-      id: "spotify",
-      title: "Spotify",
-      price: 10.99,
-      currency: "$",
-      period: "мес",
-      nextPaymentAt: "2026-03-07",
-      brandColor: "#1DB954",
-      iconUrl: "https://logo.clearbit.com/spotify.com",
-    },
-    {
-      id: "yandex-plus",
-      title: "Яндекс Плюс",
-      price: 299,
-      currency: "₽",
-      period: "мес",
-      nextPaymentAt: "2026-03-12",
-      brandColor: "#FC3F1D",
-      iconUrl: "https://logo.clearbit.com/yandex.ru",
-    },
-    {
-      id: "icloud",
-      title: "Apple iCloud",
-      price: 0.99,
-      currency: "$",
-      period: "мес",
-      nextPaymentAt: "2026-03-15",
-      brandColor: "#0A84FF",
-      iconUrl: "https://logo.clearbit.com/apple.com",
-    },
-    {
-      id: "local-coffee",
-      title: "Local Coffee",
-      price: 1490,
-      currency: "₽",
-      period: "мес",
-      nextPaymentAt: "2026-03-18",
-      brandColor: "#8B5E3C",
-      iconUrl: "https://logo.clearbit.com/starbucks.com",
-    },
-    {
-      id: "linkedin-premium",
-      title: "LinkedIn Premium",
-      price: 29.99,
-      currency: "$",
-      period: "мес",
-      nextPaymentAt: "2026-03-20",
-      brandColor: "#0A66C2",
-      iconUrl: "https://logo.clearbit.com/linkedin.com",
-    },
-    {
-      id: "youtube-premium",
-      title: "YouTube Premium",
-      price: 12.99,
-      currency: "$",
-      period: "мес",
-      nextPaymentAt: "2026-03-22",
-      brandColor: "#FF0000",
-      iconUrl: "https://logo.clearbit.com/youtube.com",
-    },
-    {
-      id: "adobe-cc",
-      title: "Adobe CC",
-      price: 52.99,
-      currency: "$",
-      period: "мес",
-      nextPaymentAt: "2026-03-25",
-      brandColor: "#FA0F00",
-      iconUrl: "https://logo.clearbit.com/adobe.com",
-    },
-  ],
-}
-
-const sortedSubscriptions = [...serverResponse.subscriptions].sort(
-  (left, right) => new Date(left.nextPaymentAt).getTime() - new Date(right.nextPaymentAt).getTime(),
-)
-
-const upcomingSubscriptions = sortedSubscriptions.slice(0, 3)
+import { useSubscriptions } from "@/hooks/use-subscriptions"
 
 const formatPaymentDate = (isoDate: string) =>
   new Intl.DateTimeFormat("ru-RU", {
@@ -117,6 +14,29 @@ const formatPaymentDate = (isoDate: string) =>
   }).format(new Date(isoDate))
 
 export default function HomeScreen() {
+  const { data, isLoading } = useSubscriptions()
+
+  const { sortedSubscriptions, upcomingSubscriptions } = useMemo(() => {
+    if (!data) return { sortedSubscriptions: [], upcomingSubscriptions: [] }
+    const sorted = [...data.items].sort(
+      (left, right) =>
+        new Date(left.next_payment_date).getTime() - new Date(right.next_payment_date).getTime()
+    )
+    return {
+      sortedSubscriptions: sorted,
+      upcomingSubscriptions: sorted.slice(0, 3),
+    }
+  }, [data])
+
+  if (isLoading) {
+    return (
+      <ThemedView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color="#E50914" />
+        <ThemedText style={{ marginTop: 16 }}>Обновление данных...</ThemedText>
+      </ThemedView>
+    )
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={{ flex: 1 }}>
@@ -124,6 +44,19 @@ export default function HomeScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {data?.monthly_spend && data.monthly_spend.length > 0 && (
+            <View style={styles.spendContainer}>
+              <ThemedText type="subtitle" style={[styles.sectionTitle, { marginBottom: 8 }]}>
+                Траты в месяц
+              </ThemedText>
+              {data.monthly_spend.map((spend, idx) => (
+                <ThemedText key={idx} style={styles.spendText}>
+                  {spend.amount.toFixed(2)} {spend.currency}
+                </ThemedText>
+              ))}
+            </View>
+          )}
+
           <ThemedText type="subtitle" style={styles.sectionTitle}>
             Ближайшие оплаты
           </ThemedText>
@@ -139,9 +72,9 @@ export default function HomeScreen() {
                 title={subscription.title}
                 price={subscription.price}
                 currency={subscription.currency}
-                paymentDate={formatPaymentDate(subscription.nextPaymentAt)}
-                brandColor={subscription.brandColor}
-                iconUrl={subscription.iconUrl}
+                paymentDate={formatPaymentDate(subscription.next_payment_date)}
+                brandColor={subscription.brand_color}
+                iconUrl={subscription.icon_url}
               />
             ))}
           </ScrollView>
@@ -158,9 +91,9 @@ export default function HomeScreen() {
                 price={subscription.price}
                 currency={subscription.currency}
                 period={subscription.period}
-                paymentDate={formatPaymentDate(subscription.nextPaymentAt)}
-                brandColor={subscription.brandColor}
-                iconUrl={subscription.iconUrl}
+                paymentDate={formatPaymentDate(subscription.next_payment_date)}
+                brandColor={subscription.brand_color}
+                iconUrl={subscription.icon_url}
               />
             ))}
           </View>
@@ -191,5 +124,13 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 20,
     gap: 12,
+  },
+  spendContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  spendText: {
+    fontSize: 24,
+    fontWeight: "600",
   },
 })

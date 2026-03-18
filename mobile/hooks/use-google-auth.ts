@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Alert, Platform } from "react-native"
 
 import { Config } from "@/constants/config"
+import { Api, setToken, getToken } from "@/api"
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -15,8 +16,14 @@ export type AuthUser = {
 
 export function useGoogleAuth() {
   const [isLoading, setIsLoading] = useState(false)
-  const [jwtToken, setJwtToken] = useState<string | null>(null)
+  const [jwtToken, setJwtTokenState] = useState<string | null>(null)
   const [user, setUser] = useState<AuthUser | null>(null)
+
+  useEffect(() => {
+    getToken().then(token => {
+      if (token) setJwtTokenState(token)
+    })
+  }, [])
 
   const [request, authResponse, promptAsync] = Google.useAuthRequest({
     webClientId: Config.google.webClientId,
@@ -25,6 +32,24 @@ export function useGoogleAuth() {
     scopes: ["openid", "profile", "email"],
     shouldAutoExchangeCode: false,
   })
+
+  // Moved up to avoid temporal dead zone
+  const exchangeAuth = useCallback(async (value: string, type: "code" | "id_token") => {
+    console.log(`[DEBUG] Exchanging ${type} with backend...`)
+
+    try {
+      const data = await Api.auth.google(value)
+
+      setJwtTokenState(data.token)
+      await setToken(data.token)
+      
+      if (data.user) setUser(data.user)
+      return data
+    } catch (e) {
+      console.error("[DEBUG] Exchange failed:", e)
+      throw e
+    }
+  }, [])
 
   useEffect(() => {
     if (authResponse?.type === "success") {
@@ -40,7 +65,7 @@ export function useGoogleAuth() {
           .finally(() => setIsLoading(false))
       }
     }
-  }, [authResponse])
+  }, [authResponse, exchangeAuth])
 
   useEffect(() => {
     if (Platform.OS === "android") {
@@ -49,31 +74,6 @@ export function useGoogleAuth() {
         offlineAccess: true,
         forceCodeForRefreshToken: true,
       })
-    }
-  }, [])
-
-  const exchangeAuth = useCallback(async (value: string, type: "code" | "id_token") => {
-    const url = `${Config.apiBaseUrl}/auth/google`
-    console.log(`[DEBUG] Exchanging ${type} with backend...`)
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          serverAuthCode: value,
-        }),
-      })
-
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error || "Server error")
-
-      setJwtToken(data.token)
-      if (data.user) setUser(data.user)
-      return data
-    } catch (e) {
-      console.error("[DEBUG] Exchange failed:", e)
-      throw e
     }
   }, [])
 
@@ -111,7 +111,8 @@ export function useGoogleAuth() {
     try {
       setIsLoading(true)
       if (Platform.OS !== "web") await GoogleSignin.signOut()
-      setJwtToken(null)
+      setJwtTokenState(null)
+      await setToken(null)
       setUser(null)
     } finally {
       setIsLoading(false)

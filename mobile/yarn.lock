@@ -5278,6 +5278,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-secure-store@npm:^55.0.9":
+  version: 55.0.9
+  resolution: "expo-secure-store@npm:55.0.9"
+  peerDependencies:
+    expo: "*"
+  checksum: 10c0/bcfff2b88ee505d1cc0e0197b82ed33c19faebc49b566fd38c4d8c03f2e7ab2165e34c93839cbfa5b0e214314de1558f194523f1e6231b830c1d0b9ee1e556fe
+  languageName: node
+  linkType: hard
+
 "expo-server@npm:^1.0.5":
   version: 1.0.5
   resolution: "expo-server@npm:1.0.5"
@@ -7747,6 +7756,7 @@ __metadata:
     expo-image: "npm:~3.0.11"
     expo-linking: "npm:~8.0.11"
     expo-router: "npm:~6.0.23"
+    expo-secure-store: "npm:^55.0.9"
     expo-splash-screen: "npm:~31.0.13"
     expo-status-bar: "npm:~3.0.9"
     expo-symbols: "npm:~1.0.8"
