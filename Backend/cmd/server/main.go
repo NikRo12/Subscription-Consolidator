@@ -18,7 +18,14 @@ func init() {
 func main() {
 	flag.Parse()
 
-	if err := httpserver.Start(configs.GetDBURL(), configs.GetLogLevel(), configs.GetServerHost(), configs.GetRedisAddr()); err != nil {
+	if err := httpserver.Start(
+		configs.GetDBURL(),
+		configs.GetLogLevel(),
+		configs.GetServerHost(),
+		configs.GetRedisAddr(),
+		configs.GetGoogleClientID(),
+		configs.GetGoogleClientSecret(),
+	); err != nil {
 		log.Fatal(err)
 	}
 

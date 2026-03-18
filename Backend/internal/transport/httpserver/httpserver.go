@@ -9,13 +9,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/email"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store/sqlstore"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/transport/queueconsumer"
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
 
-func Start(databaseURL, logLevel, bindAddr, redisAddr string) error {
+func Start(databaseURL, logLevel, bindAddr, redisAddr, clientID, clientSecret string) error {
 	db, err := newDB(databaseURL)
 	if err != nil {
 		return err
@@ -29,6 +30,8 @@ func Start(databaseURL, logLevel, bindAddr, redisAddr string) error {
 		return err
 	}
 
+	authSerive := email.NewAuthService(clientID, clientSecret)
+
 	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
 	defer redisClient.Close()
 
@@ -41,7 +44,7 @@ func Start(databaseURL, logLevel, bindAddr, redisAddr string) error {
 	consumer := queueconsumer.NewQueueConsumer(redisClient, store, logger)
 	consumer.StartListeninig(ctx)
 
-	s := newServer(store, logger, redisClient)
+	s := newServer(store, logger, redisClient, authSerive)
 	httpServer := &http.Server{
 		Addr:    bindAddr,
 		Handler: s,
