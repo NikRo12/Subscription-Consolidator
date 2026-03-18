@@ -7,7 +7,7 @@ import (
 
 var ErrNoAuthKey = errors.New("There's no GigaChat auth-key")
 
-func GetGigaChatAuthKey() (string, error) {
+func getGigaChatAuthKey() (string, error) {
 	addr := os.Getenv("AUTH_KEY")
 	if addr == "" {
 		return "", ErrNoAuthKey

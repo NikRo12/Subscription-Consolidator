@@ -46,7 +46,7 @@ func NewGigaChatClient(russianCertPath string) (*GigaChatClient, error) {
 		TLSClientConfig: tlsClientConfig,
 	}
 
-	authKey, err := GetGigaChatAuthKey()
+	authKey, err := getGigaChatAuthKey()
 	if err != nil {
 		return nil, fmt.Errorf("[ERROR] Get auth key: %w", err)
 	}
