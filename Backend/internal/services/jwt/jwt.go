@@ -1,13 +1,11 @@
-package services
+package jwt
 
 import (
-	"os"
 	"time"
 
+	"github.com/NikRo12/Subscription-Consolidator/Backend/configs"
 	"github.com/golang-jwt/jwt/v5"
 )
-
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func GenerateJWT(userID int) (string, error) {
 	claims := jwt.MapClaims{
@@ -16,12 +14,12 @@ func GenerateJWT(userID int) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString([]byte(configs.GetJWTSecret()))
 }
 
 func ParseJWT(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(jwtSecret), nil
+		return []byte(configs.GetJWTSecret()), nil
 	})
 
 	if err != nil {

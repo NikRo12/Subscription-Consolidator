@@ -1,15 +1,22 @@
 package httpserver
 
 import (
+	"context"
 	"database/sql"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store/sqlstore"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/transport/queueconsumer"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
 
-func Start(databaseDriver, databaseURL, logLevel, bindAddr string) error {
-	db, err := newDB(databaseDriver, databaseURL)
+func Start(databaseURL, logLevel, bindAddr, redisAddr string) error {
+	db, err := newDB(databaseURL)
 	if err != nil {
 		return err
 	}
@@ -21,13 +28,45 @@ func Start(databaseDriver, databaseURL, logLevel, bindAddr string) error {
 	if err != nil {
 		return err
 	}
-	s := newServer(store, logger)
 
-	return http.ListenAndServe(bindAddr, s)
+	redisClient := redis.NewClient(&redis.Options{Addr: redisAddr})
+	defer redisClient.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
+	consumer := queueconsumer.NewQueueConsumer(redisClient, store, logger)
+	consumer.StartListeninig(ctx)
+
+	s := newServer(store, logger, redisClient)
+	httpServer := &http.Server{
+		Addr:    bindAddr,
+		Handler: s,
+	}
+
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Fatal(err)
+		}
+	}()
+
+	logger.Infof("Server started on %s", bindAddr)
+
+	<-quit
+	logger.Info("Shutting down...")
+	cancel()
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	return httpServer.Shutdown(shutdownCtx)
 }
 
-func newDB(driver, url string) (*sql.DB, error) {
-	db, err := sql.Open(driver, url)
+func newDB(url string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", url)
 	if err != nil {
 		return nil, err
 	}

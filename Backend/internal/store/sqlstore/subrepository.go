@@ -61,8 +61,8 @@ func (r *SqlSubRepository) CreateUserSub(us *models.UserSubscription) error {
 	return err
 }
 
-func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Entry, error) {
-	rows, err := r.store.db.Query(`
+func (r *SqlSubRepository) GetAllSubsForUser(userID int, category string) ([]*models.Entry, error) {
+	query := `
 		SELECT 
 			s.id, 
 			s.title, 
@@ -78,9 +78,20 @@ func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Entry, error
 		FROM subs s 
 		JOIN user_subs us ON s.id = us.sub_id 
 		JOIN users u ON u.id = us.user_id
-		WHERE us.user_id = $1`,
-		userID,
+		WHERE us.user_id = $1
+		`
+
+	args := []any{userID}
+
+	if category != "" {
+		query += " AND s.category = $2"
+		args = append(args, category)
+	}
+
+	rows, err := r.store.db.Query(query,
+		args...,
 	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +103,7 @@ func (r *SqlSubRepository) GetAllSubsForUser(userID int) ([]*models.Entry, error
 	for rows.Next() {
 		entry := &models.Entry{}
 		if err := rows.Scan(
-			&entry.UserID,
+			&entry.SubID,
 			&entry.Title,
 			&entry.Price,
 			&entry.Currency,

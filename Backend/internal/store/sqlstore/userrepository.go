@@ -12,19 +12,25 @@ type SqlUserRepository struct {
 
 func (r *SqlUserRepository) CreateUser(u *models.User) error {
 	return r.store.db.QueryRow(
-		"INSERT INTO users (refresh_token) VALUES ($1) RETURNING id",
-		u.RefreshToken,
+		"INSERT INTO users (google_id, refresh_token, access_token) VALUES ($1, $2, $3) RETURNING id",
+		u.GoogleID, u.RefreshToken, u.AccessToken,
 	).Scan(&u.ID)
 }
 
 func (r *SqlUserRepository) FindOrCreateUser(u *models.User) error {
 	err := r.store.db.QueryRow(
-		"SELECT id, refresh_token FROM users WHERE id = $1",
-		u.ID,
-	).Scan(&u.ID, &u.RefreshToken)
+		"SELECT id FROM users WHERE google_id = $1",
+		u.GoogleID,
+	).Scan(&u.ID)
 
 	if err == nil {
-		return nil
+		_, err = r.store.db.Exec(
+			"UPDATE users SET refresh_token = $1, access_token = $2 WHERE id = $3",
+			u.RefreshToken,
+			u.AccessToken,
+			u.ID,
+		)
+		return err
 	}
 
 	if err != sql.ErrNoRows {
@@ -32,8 +38,10 @@ func (r *SqlUserRepository) FindOrCreateUser(u *models.User) error {
 	}
 
 	return r.store.db.QueryRow(
-		"INSERT INTO users (refresh_token) VALUES ($1) RETURNING id",
+		"INSERT INTO users (google_id, refresh_token, access_token) VALUES ($1, $2, $3) RETURNING id",
+		u.GoogleID,
 		u.RefreshToken,
+		u.AccessToken,
 	).Scan(&u.ID)
 }
 

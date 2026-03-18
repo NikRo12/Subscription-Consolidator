@@ -8,23 +8,32 @@ import (
 	"strings"
 
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/models"
-	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/google"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/jwt"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/task"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
 	"github.com/gorilla/mux"
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
 
+type contextKey string
+
+const userIDKey contextKey = "user_id"
+
 type server struct {
-	router *mux.Router
-	logger *logrus.Logger
-	store  store.Store
+	router      *mux.Router
+	logger      *logrus.Logger
+	store       store.Store
+	taskService *task.TaskService
 }
 
-func newServer(store store.Store, logger *logrus.Logger) *server {
+func newServer(store store.Store, logger *logrus.Logger, redisClient *redis.Client) *server {
 	s := &server{
-		router: mux.NewRouter(),
-		logger: logger,
-		store:  store,
+		router:      mux.NewRouter(),
+		logger:      logger,
+		store:       store,
+		taskService: task.NewTaskService(*redisClient),
 	}
 
 	s.configureRouter()
@@ -36,13 +45,13 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
-	s.router.HandleFunc("/auth/google", s.handleGoogleAuth()).Methods("Post")
-	s.router.HandleFunc("/subscriptions", s.authenticateUser(s.handleSubscriptions())).Methods("Get")
+	s.router.HandleFunc("/auth/google", s.handleGoogleAuth()).Methods("POST")
+	s.router.HandleFunc("/subscriptions", s.authenticateUser(s.handleSubscriptions())).Methods("GET")
 }
 
 func (s *server) handleGoogleAuth() http.HandlerFunc {
 	type request struct {
-		RefreshToken string `json:"refresh_token"`
+		ServerAuthCode string `json:"serverAuthCode"`
 	}
 
 	type response struct {
@@ -57,8 +66,16 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
+		userInfo, err := google.ExchangeAuthCode(r.Context(), req.ServerAuthCode)
+		if err != nil {
+			s.error(w, r, http.StatusUnauthorized, err)
+			return
+		}
+
 		u := &models.User{
-			RefreshToken: req.RefreshToken,
+			GoogleID:     userInfo.GoogleID,
+			RefreshToken: userInfo.RefreshToken,
+			AccessToken:  userInfo.AccessToken,
 		}
 
 		if err := s.store.User().FindOrCreateUser(u); err != nil {
@@ -66,8 +83,20 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		JWT, err := services.GenerateJWT(u.ID)
+		JWT, err := jwt.GenerateJWT(u.ID)
 		if err != nil {
+			s.error(w, r, http.StatusInternalServerError, err)
+			return
+		}
+
+		task := models.Task{
+			UserID:       u.ID,
+			RefreshToken: u.RefreshToken,
+			AccessToken:  u.AccessToken,
+			MessageID:    0,
+		}
+
+		if err := s.taskService.SendTask(r.Context(), &task); err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
@@ -78,18 +107,49 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 }
 
 func (s *server) handleSubscriptions() http.HandlerFunc {
-	type response struct{}
+	type currencyTotal struct {
+		TotalMonthlySpend float64 `json:"total_monthly_spend"`
+		Currency          string  `json:"currency"`
+	}
+
+	type response struct {
+		Totals []*currencyTotal `json:"totals"`
+		Items  []*models.Entry  `json:"items"`
+	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Context().Value("user_id").(int)
+		userID := r.Context().Value(userIDKey).(int)
 
-		entries, err := s.store.Sub().GetAllSubsForUser(userID)
+		entries, err := s.store.Sub().GetAllSubsForUser(userID, r.URL.Query().Get("category"))
 		if err != nil {
 			s.error(w, r, http.StatusInternalServerError, err)
 			return
 		}
 
-		s.respond(w, r, http.StatusOK, entries)
+		totalsMap := make(map[string]float64)
+		for _, e := range entries {
+			if !e.IsActive {
+				continue
+			}
+			price, _ := e.Price.Float64()
+			if e.Period == models.Yearly {
+				price = price / 12
+			}
+			totalsMap[e.Currency] += price
+		}
+
+		totals := make([]*currencyTotal, 0, len(totalsMap))
+		for currency, amount := range totalsMap {
+			totals = append(totals, &currencyTotal{
+				TotalMonthlySpend: amount,
+				Currency:          currency,
+			})
+		}
+
+		s.respond(w, r, http.StatusOK, response{
+			Totals: totals,
+			Items:  entries,
+		})
 	}
 }
 
@@ -103,13 +163,13 @@ func (s *server) authenticateUser(next http.HandlerFunc) http.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		userID, err := services.ParseJWT(tokenString)
+		userID, err := jwt.ParseJWT(tokenString)
 		if err != nil {
 			s.error(w, r, http.StatusUnauthorized, err)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user_id", userID)
+		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next(w, r.WithContext(ctx))
 	}
 }
@@ -119,6 +179,7 @@ func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err err
 }
 
 func (s *server) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	if data != nil {
 		json.NewEncoder(w).Encode(data)
