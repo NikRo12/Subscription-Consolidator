@@ -42,31 +42,6 @@ paths:
                       name:
                         type: string
 
-  # Статус парсинга (для лоадера на фронте)
-  /sync/status:
-    get:
-      summary: Получение статуса сканирования почты
-      tags: [Sync]
-      responses:
-        "200":
-          description: Получение статуса сканирования почты
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    enum: [idle, scanning, completed, error]
-                  last_sync:
-                    type: string
-                    format: date-time
-                  found_count:
-                    type: integer
-                  mails_processed:
-                    type: integer
-                  mails_count:
-                    type: integer
 
   # Основной список подписок
   /subscriptions:
@@ -87,12 +62,17 @@ paths:
               schema:
                 type: object
                 properties:
-                  total_monthly_spend:
-                    type: number
-                    example: 1540.00
-                  currency:
-                    type: string
-                    example: "₽"
+                  monthly_spend:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        amount:
+                          type: number
+                          example: 1540.00
+                        currency:
+                          type: string
+                          example: "RUB"
                   items:
                     type: array
                     items:
