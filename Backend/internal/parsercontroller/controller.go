@@ -19,16 +19,10 @@ import (
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/email"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/filter"
 	redisServ "github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/redis"
-	"github.com/joho/godotenv"
 	redisLib "github.com/redis/go-redis/v9"
 )
 
 func Run() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Printf("Warning: cannot find .env file, relying on environment variables: %v\n", err)
-	}
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 

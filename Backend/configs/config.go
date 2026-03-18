@@ -48,7 +48,7 @@ func GetRedisAddr() string {
 }
 
 func GetGoogleClientID() (string, error) {
-	cleintID := os.Getenv("CLIENT_ID")
+	cleintID := os.Getenv("GOOGLE_CLIENT_ID")
 	if cleintID == "" {
 		return "", errors.New("cannot get client-id")
 	}
@@ -56,7 +56,7 @@ func GetGoogleClientID() (string, error) {
 }
 
 func GetGoogleClientSecret() (string, error) {
-	cleintSecret := os.Getenv("CLIENT_SECRET")
+	cleintSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 	if cleintSecret == "" {
 		return "", errors.New("cannot get client-id")
 	}
