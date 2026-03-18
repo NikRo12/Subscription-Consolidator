@@ -43,3 +43,13 @@ func GetRedisAddr() string {
 	}
 	return addr
 }
+
+func GetGoogleClientID() string {
+	addr := os.Getenv("GOOGLE_CLIENT_ID")
+	return addr
+}
+
+func GetGoogleClientSecret() string {
+	addr := os.Getenv("GOOGLE_CLIENT_SECRET")
+	return addr
+}
