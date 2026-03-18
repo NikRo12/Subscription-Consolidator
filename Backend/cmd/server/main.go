@@ -11,13 +11,25 @@ import (
 func main() {
 	flag.Parse()
 
+	clientID, err := configs.GetGoogleClientID()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	clientSecret, err := configs.GetGoogleClientSecret()
+	if err != nil {
+		log.Fatal()
+		return
+	}
+
 	if err := httpserver.Start(
 		configs.GetDBURL(),
 		configs.GetLogLevel(),
 		configs.GetServerHost(),
 		configs.GetRedisAddr(),
-		configs.GetGoogleClientID(),
-		configs.GetGoogleClientSecret(),
+		clientID,
+		clientSecret,
 	); err != nil {
 		log.Fatal(err)
 	}
