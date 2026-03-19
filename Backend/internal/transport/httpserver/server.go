@@ -63,6 +63,7 @@ func (s *server) configureRouter() {
 func (s *server) handleGoogleAuth() http.HandlerFunc {
 	type request struct {
 		ServerAuthCode string `json:"serverAuthCode"`
+		RedirectURI    string `json:"redirectUri"`
 	}
 
 	type response struct {
@@ -76,7 +77,7 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		userInfo, err := s.authService.ExchangeAuthCode(r.Context(), req.ServerAuthCode)
+		userInfo, err := s.authService.ExchangeAuthCode(r.Context(), req.ServerAuthCode, req.RedirectURI)
 		if err != nil {
 			s.error(w, r, http.StatusUnauthorized, err)
 			return
