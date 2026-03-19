@@ -1,3 +1,4 @@
+import * as AuthSession from "expo-auth-session"
 import * as Google from "expo-auth-session/providers/google"
 import * as WebBrowser from "expo-web-browser"
 import { useCallback, useEffect, useState } from "react"
@@ -35,14 +36,20 @@ export function useGoogleAuth() {
     })
   }, [])
 
+  const redirectUri = Platform.OS === "web"
+    ? AuthSession.makeRedirectUri()
+    : "https://auth.expo.io/@harvestapp23/mobile"
+
   const [_request, authResponse, promptAsync] = Google.useAuthRequest({
     // Use Web Client ID for both web and Expo Go environments
     webClientId: Config.google.webClientId,
     iosClientId: GoogleSignin ? Config.google.iosClientId : Config.google.webClientId,
     androidClientId: GoogleSignin ? Config.google.androidClientId : Config.google.webClientId,
-    responseType: Platform.OS === "web" ? "id_token" : "code",
+    responseType: "code",
     scopes: ["openid", "profile", "email"],
+    usePKCE: false,
     shouldAutoExchangeCode: false,
+    redirectUri,
   })
 
   // Moved up to avoid temporal dead zone
@@ -50,7 +57,7 @@ export function useGoogleAuth() {
     console.log(`[DEBUG] Exchanging ${type} with backend...`)
 
     try {
-      const data = await Api.auth.google(value)
+      const data = await Api.auth.google(value, redirectUri)
 
       setJwtTokenState(data.token)
       await setToken(data.token)
@@ -61,16 +68,15 @@ export function useGoogleAuth() {
       console.error("[DEBUG] Exchange failed:", e)
       throw e
     }
-  }, [])
+  }, [redirectUri])
 
   useEffect(() => {
     if (authResponse?.type === "success") {
-      const { code, id_token } = authResponse.params
-      const tokenOrCode = id_token || code
+      const { code } = authResponse.params
       
-      if (tokenOrCode) {
+      if (code) {
         setIsLoading(true)
-        exchangeAuth(tokenOrCode, id_token ? "id_token" : "code")
+        exchangeAuth(code, "code")
           .catch(err => {
             console.warn("Backend exchange failed:", err.message)
           })
