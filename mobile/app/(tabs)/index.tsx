@@ -1,5 +1,6 @@
+import { useRouter } from "expo-router"
 import React, { useMemo } from "react"
-import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Pressable, SafeAreaView, ScrollView, StyleSheet, View } from "react-native"
 
 import { BrandCard } from "@/components/brand-card"
 import { SubscriptionRow } from "@/components/subscription-row"
@@ -14,7 +15,7 @@ const formatPaymentDate = (isoDate: string) =>
   }).format(new Date(isoDate))
 
 export default function HomeScreen() {
-  const { data, isLoading } = useSubscriptions()
+  const { data, isLoading, error } = useSubscriptions()
 
   const { sortedSubscriptions, upcomingSubscriptions } = useMemo(() => {
     if (!data) return { sortedSubscriptions: [], upcomingSubscriptions: [] }
@@ -27,6 +28,24 @@ export default function HomeScreen() {
       upcomingSubscriptions: sorted.slice(0, 3),
     }
   }, [data])
+
+  const router = useRouter()
+
+  if (error) {
+    return (
+      <ThemedView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <ThemedText style={{ marginBottom: 16 }}>
+          {error === "Unauthorized" ? "Войдите в аккаунт, чтобы увидеть подписки" : `Ошибка: ${error}`}
+        </ThemedText>
+        <Pressable 
+          style={{ backgroundColor: "#0A84FF", padding: 12, borderRadius: 8 }}
+          onPress={() => router.push("/profile")}
+        >
+          <ThemedText style={{ color: "#fff", fontWeight: "600" }}>Войти в профиль</ThemedText>
+        </Pressable>
+      </ThemedView>
+    )
+  }
 
   if (isLoading) {
     return (

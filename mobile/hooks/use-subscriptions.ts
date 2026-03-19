@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react"
+import { useFocusEffect } from "expo-router"
+import { useCallback, useState } from "react"
 
 import { Api, SubscriptionsResponse } from "@/api"
 
@@ -10,6 +11,7 @@ export function useSubscriptions() {
   const fetchSubs = useCallback(async () => {
     try {
       setIsLoading(true)
+      setError(null)
       const res = await Api.subscriptions.getAll()
       setData(res)
     } catch (e: any) {
@@ -19,9 +21,11 @@ export function useSubscriptions() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchSubs()
-  }, [fetchSubs])
+  useFocusEffect(
+    useCallback(() => {
+      fetchSubs()
+    }, [fetchSubs])
+  )
 
   return { data, isLoading, error, refetch: fetchSubs }
 }

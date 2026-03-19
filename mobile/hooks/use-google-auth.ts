@@ -1,11 +1,21 @@
-import { GoogleSignin, isSuccessResponse } from "@react-native-google-signin/google-signin"
 import * as Google from "expo-auth-session/providers/google"
 import * as WebBrowser from "expo-web-browser"
 import { useCallback, useEffect, useState } from "react"
 import { Alert, Platform } from "react-native"
 
+import { Api, getToken, setToken } from "@/api"
 import { Config } from "@/constants/config"
-import { Api, setToken, getToken } from "@/api"
+
+let GoogleSignin: any = null
+let isSuccessResponse: any = null
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const m = require("@react-native-google-signin/google-signin")
+  GoogleSignin = m.GoogleSignin
+  isSuccessResponse = m.isSuccessResponse
+} catch {
+  // Ignore
+}
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -25,9 +35,11 @@ export function useGoogleAuth() {
     })
   }, [])
 
-  const [request, authResponse, promptAsync] = Google.useAuthRequest({
+  const [_request, authResponse, promptAsync] = Google.useAuthRequest({
+    // Use Web Client ID for both web and Expo Go environments
     webClientId: Config.google.webClientId,
-    iosClientId: Config.google.iosClientId,
+    iosClientId: GoogleSignin ? Config.google.iosClientId : Config.google.webClientId,
+    androidClientId: GoogleSignin ? Config.google.androidClientId : Config.google.webClientId,
     responseType: Platform.OS === "web" ? "id_token" : "code",
     scopes: ["openid", "profile", "email"],
     shouldAutoExchangeCode: false,
@@ -68,7 +80,7 @@ export function useGoogleAuth() {
   }, [authResponse, exchangeAuth])
 
   useEffect(() => {
-    if (Platform.OS === "android") {
+    if (Platform.OS === "android" && GoogleSignin) {
       GoogleSignin.configure({
         webClientId: Config.google.webClientId,
         offlineAccess: true,
@@ -81,12 +93,15 @@ export function useGoogleAuth() {
     try {
       setIsLoading(true)
 
-      if (Platform.OS === "web") {
-        await promptAsync()
+      if (Platform.OS === "web" || !GoogleSignin) {
+        const response = await promptAsync()
+        if (response?.type !== "success") {
+           return
+        }
         return
       }
 
-      if (Platform.OS === "android") {
+      if (Platform.OS === "android" && GoogleSignin) {
         await GoogleSignin.hasPlayServices()
         const signInResponse = await GoogleSignin.signIn()
         if (isSuccessResponse(signInResponse)) {
@@ -110,7 +125,7 @@ export function useGoogleAuth() {
   const logout = useCallback(async () => {
     try {
       setIsLoading(true)
-      if (Platform.OS !== "web") await GoogleSignin.signOut()
+      if (Platform.OS !== "web" && GoogleSignin) await GoogleSignin.signOut()
       setJwtTokenState(null)
       await setToken(null)
       setUser(null)
