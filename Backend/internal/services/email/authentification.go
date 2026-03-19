@@ -35,13 +35,18 @@ func NewAuthService(clientID, clientSecret string) *AuthService {
 	}
 }
 
-func (s *AuthService) ExchangeAuthCode(ctx context.Context, serverAuthCode string) (*GoogleUserInfo, error) {
-	token, err := s.config.Exchange(ctx, serverAuthCode)
+func (s *AuthService) ExchangeAuthCode(ctx context.Context, serverAuthCode string, redirectURI string) (*GoogleUserInfo, error) {
+	cfg := *s.config
+	if redirectURI != "" {
+		cfg.RedirectURL = redirectURI
+	}
+
+	token, err := cfg.Exchange(ctx, serverAuthCode)
 	if err != nil {
 		return nil, fmt.Errorf("exchange code failed: %w", err)
 	}
 
-	oauth2Service, err := oauth2GoogleV2.NewService(ctx, option.WithTokenSource(s.config.TokenSource(ctx, token)))
+	oauth2Service, err := oauth2GoogleV2.NewService(ctx, option.WithTokenSource(cfg.TokenSource(ctx, token)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create oauth2 service: %w", err)
 	}
