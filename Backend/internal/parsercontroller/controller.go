@@ -31,10 +31,7 @@ func Run() {
 	)
 	defer redisConn.Terminate()
 
-	certPath := os.Getenv("CERT_PATH")
-	if certPath == "" {
-		certPath = "certs/russian_trusted_root_ca_pem.crt"
-	}
+	certPath := configs.GetCertPath()
 
 	analyzer, err := ai.NewGigaChatClient(certPath)
 	if err != nil {

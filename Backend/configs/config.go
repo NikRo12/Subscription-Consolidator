@@ -62,3 +62,12 @@ func GetGoogleClientSecret() (string, error) {
 	}
 	return cleintSecret, nil
 }
+
+func GetCertPath() string {
+	certPath := os.Getenv("CERT_PATH")
+	if certPath == "" {
+		certPath = "certs/russian_trusted_root_ca_pem.crt"
+	}
+
+	return certPath
+}

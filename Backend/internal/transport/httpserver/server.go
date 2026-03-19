@@ -14,6 +14,7 @@ import (
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
 	"github.com/gorilla/mux"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,6 +48,19 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{
+			"http://localhost:3000",
+			"http://localhost:8081",
+		},
+
+		AllowedMethods: []string{
+			"GET", "POST",
+		},
+	})
+
+	s.router.Use(c.Handler)
+
 	s.router.HandleFunc("/auth/google", s.handleGoogleAuth()).Methods("POST")
 	s.router.HandleFunc("/subscriptions", s.authenticateUser(s.handleSubscriptions())).Methods("GET")
 }

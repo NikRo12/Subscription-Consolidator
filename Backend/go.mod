@@ -45,6 +45,7 @@ require (
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/mux v1.8.1
+	github.com/rs/cors v1.11.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sys v0.42.0 // indirect
