@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
 )
@@ -23,14 +24,25 @@ func ExtractGmailUser(
 	clientSecret string,
 ) (*gmailUser, error) {
 
-	cfg := &oauth2.Config{ClientID: clientID, ClientSecret: clientSecret}
+	if refreshToken == "" {
+		return nil, fmt.Errorf("refresh token is empty (user needs to re-authenticate with consent)")
+	}
+
+	cfg := &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Endpoint:     google.Endpoint,
+	}
 
 	token := &oauth2.Token{RefreshToken: refreshToken}
+
 	client := cfg.Client(ctx, token)
+
 	gService, err := gmail.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, fmt.Errorf("cannot create an gmail service: %w", err)
+		return nil, fmt.Errorf("cannot create a gmail service: %w", err)
 	}
+
 	return &gmailUser{gmailService: gService}, nil
 }
 
