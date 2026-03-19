@@ -34,12 +34,16 @@ func (qc *QueueConsumer) StartListeninig(ctx context.Context) {
 func (qc *QueueConsumer) ParseResult(res models.ParseResult) {
 	userID := res.UserID
 
+	qc.logger.Infof("[UserID: %d] received ParseResult with %d entries", userID, len(res.EntryData))
+
 	if err := qc.store.Sub().DeleteAllUserSubs(userID); err != nil {
-		qc.logger.Errorf("failed to clear user_subs for user %d: %v", userID, err)
+		qc.logger.Errorf("[UserID: %d] failed to clear user_subs: %v", userID, err)
 		return
 	}
 
-	for _, entry := range res.EntryData {
+	qc.logger.Infof("[UserID: %d] cleared existing user_subs", userID)
+
+	for i, entry := range res.EntryData {
 		sub := models.Subscription{
 			Title:       entry.Title,
 			Currency:    entry.Currency,
@@ -49,10 +53,16 @@ func (qc *QueueConsumer) ParseResult(res models.ParseResult) {
 			Description: entry.Description,
 		}
 
+		qc.logger.Infof("[UserID: %d] processing entry %d/%d: title=%q, currency=%q, category=%q",
+			userID, i+1, len(res.EntryData), sub.Title, sub.Currency, sub.Category)
+
 		if err := qc.store.Sub().CreateSub(&sub); err != nil {
-			qc.logger.Error(err)
+			qc.logger.Errorf("[UserID: %d] failed to CreateSub for entry %d (title=%q): %v",
+				userID, i+1, sub.Title, err)
 			continue
 		}
+
+		qc.logger.Infof("[UserID: %d] created/updated sub id=%d title=%q", userID, sub.ID, sub.Title)
 
 		userSub := models.UserSubscription{
 			UserID:          userID,
@@ -64,9 +74,15 @@ func (qc *QueueConsumer) ParseResult(res models.ParseResult) {
 		}
 
 		if err := qc.store.Sub().CreateUserSub(&userSub); err != nil {
-			qc.logger.Error(err)
+			qc.logger.Errorf("[UserID: %d] failed to CreateUserSub for sub id=%d (title=%q): %v",
+				userID, sub.ID, sub.Title, err)
+			continue
 		}
+
+		qc.logger.Infof("[UserID: %d] created user_sub for sub id=%d title=%q", userID, sub.ID, sub.Title)
 	}
+
+	qc.logger.Infof("[UserID: %d] ParseResult processing complete", userID)
 }
 
 func (qc *QueueConsumer) listen(ctx context.Context) {

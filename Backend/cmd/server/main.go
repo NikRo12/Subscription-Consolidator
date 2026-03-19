@@ -19,7 +19,7 @@ func main() {
 
 	clientSecret, err := configs.GetGoogleClientSecret()
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 		return
 	}
 

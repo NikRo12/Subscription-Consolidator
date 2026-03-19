@@ -145,8 +145,19 @@ func subroutine(
 
 			aiSemaphore <- struct{}{}
 
-			prompt := fmt.Sprintf("Извлеки данные о подписке из этого чека. Верни строго валидный JSON массив объектов "+
-				"содержащий поля: title, price, currency. Если это не подписка, верни []. Текст: %s", text)
+			prompt := fmt.Sprintf(`Извлеки данные о подписке из этого чека.
+Верни строго валидный JSON массив объектов. Каждый объект должен содержать поля:
+- "title" (string): название сервиса/подписки
+- "price" (number): сумма платежа
+- "currency" (string): валюта (например "RUB", "USD")
+- "period" (string): период оплаты (например "monthly", "yearly", "weekly")
+- "category" (string): категория (например "streaming", "software", "music", "gaming")
+- "next_payment_date" (string): дата следующего платежа в формате YYYY-MM-DD, если неизвестна — пустая строка ""
+- "icon_url" (string): пустая строка ""
+- "brand_color" (string): пустая строка ""
+- "description" (string): краткое описание подписки
+- "is_active" (bool): true
+Если в тексте нет информации о подписке — верни []. Никаких пояснений, только JSON. Текст: %s`, text)
 
 			ctxTmt, cancelTmt := context.WithTimeout(ctx, 15*time.Second)
 			defer cancelTmt()
