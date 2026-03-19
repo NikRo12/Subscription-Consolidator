@@ -9,20 +9,20 @@ type SqlSubRepository struct {
 func (r *SqlSubRepository) CreateSub(s *models.Subscription) error {
 	return r.store.db.QueryRow(
 		`INSERT INTO subs (
-    		title,
-    		currency,
-    		category,
-    		icon_url,
-    		brand_color,
-    		description
-		) VALUES (
-    		$1,  -- title
-    		$2,  -- currency
-    		$3,  -- category
-    		$4,  -- icon_url
-    		$5,  -- brand_color
-    		$6   -- description
-		)
+			title,
+			currency,
+			category,
+			icon_url,
+			brand_color,
+			description
+		) VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (title) DO UPDATE
+			SET
+				currency    = EXCLUDED.currency,
+				category    = EXCLUDED.category,
+				icon_url    = EXCLUDED.icon_url,
+				brand_color = EXCLUDED.brand_color,
+				description = EXCLUDED.description
 		RETURNING id;`,
 		s.Title,
 		s.Currency,
@@ -31,6 +31,14 @@ func (r *SqlSubRepository) CreateSub(s *models.Subscription) error {
 		s.BrandColor,
 		s.Description,
 	).Scan(&s.ID)
+}
+
+func (r *SqlSubRepository) DeleteAllUserSubs(userID int) error {
+	_, err := r.store.db.Exec(
+		`DELETE FROM user_subs WHERE user_id = $1`,
+		userID,
+	)
+	return err
 }
 
 func (r *SqlSubRepository) CreateUserSub(us *models.UserSubscription) error {
