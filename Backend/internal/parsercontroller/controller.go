@@ -53,6 +53,9 @@ func Run() {
 
 	var wgWorkers sync.WaitGroup
 
+	// лог для тестирования
+	log.Println("--parser started working succesfully--")
+
 	go func() {
 		for {
 			task, err := redisConn.GetTask(ctx)
@@ -78,6 +81,8 @@ func Run() {
 					aiSemaphore,
 				)
 			}(task)
+			// лог для тестирования
+			log.Println("--successfully started new goroutine with new task--")
 		}
 	}()
 
@@ -121,17 +126,21 @@ func subroutine(
 		return
 	}
 
-	rawEmails, err := gmailUser.GetEmailsText(20)
+	rawEmails, err := gmailUser.GetEmailsText(150)
 	if err != nil {
 		log.Printf("[UserID: %d] cannot fetch emails: %v\n", task.UserID, err)
 		return
 	}
+	// лог для тестирования
+	log.Printf("--extracted %d emails--\n", len(rawEmails))
 
 	filteredEmails := filter.FilterRelevantEmails(rawEmails)
 	if len(filteredEmails) == 0 {
 		log.Printf("[UserID: %d] no relevant emails found\n", task.UserID)
 		return
 	}
+	// лог для тестирования
+	log.Printf("--there are %d emails after filtering--\n", len(filteredEmails))
 
 	var allEntries []models.Entry
 	var mtx sync.Mutex
@@ -139,6 +148,9 @@ func subroutine(
 
 	for _, emailText := range filteredEmails {
 		wg.Add(1)
+
+		// лог для тестирования
+		log.Printf("--the text [%s] is being analyzed by AI\n--", emailText)
 
 		go func(text string) {
 			defer wg.Done()
@@ -189,11 +201,19 @@ func subroutine(
 
 	wg.Wait()
 
+	//лог для тестриования
+	log.Println("--user's emails processing is finished--")
+
 	if len(allEntries) > 0 {
+		//лог для тестриования
+		log.Printf("--there are %d new subscriptions\n--", len(allEntries))
 		resChan <- &models.ParseResult{
 			UserID:    task.UserID,
 			EntryData: allEntries,
 		}
+	} else {
+		//лог для тестриования
+		log.Println("--there is no new subscriptions--")
 	}
 }
 
