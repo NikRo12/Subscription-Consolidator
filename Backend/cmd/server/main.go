@@ -6,19 +6,31 @@ import (
 
 	"github.com/NikRo12/Subscription-Consolidator/Backend/configs"
 	httpserver "github.com/NikRo12/Subscription-Consolidator/Backend/internal/transport/httpserver"
-	"github.com/joho/godotenv"
 )
-
-func init() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal(err)
-	}
-}
 
 func main() {
 	flag.Parse()
 
-	if err := httpserver.Start(configs.GetDBURL(), configs.GetLogLevel(), configs.GetServerHost(), configs.GetRedisAddr()); err != nil {
+	clientID, err := configs.GetGoogleClientID()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	clientSecret, err := configs.GetGoogleClientSecret()
+	if err != nil {
+		log.Fatal()
+		return
+	}
+
+	if err := httpserver.Start(
+		configs.GetDBURL(),
+		configs.GetLogLevel(),
+		configs.GetServerHost(),
+		configs.GetRedisAddr(),
+		clientID,
+		clientSecret,
+	); err != nil {
 		log.Fatal(err)
 	}
 

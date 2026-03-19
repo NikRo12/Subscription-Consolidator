@@ -1,6 +1,9 @@
 package configs
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
 func GetServerHost() string {
 	host := os.Getenv("HOST")
@@ -42,4 +45,20 @@ func GetRedisAddr() string {
 		addr = "localhost:6379"
 	}
 	return addr
+}
+
+func GetGoogleClientID() (string, error) {
+	cleintID := os.Getenv("GOOGLE_CLIENT_ID")
+	if cleintID == "" {
+		return "", errors.New("cannot get client-id")
+	}
+	return cleintID, nil
+}
+
+func GetGoogleClientSecret() (string, error) {
+	cleintSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	if cleintSecret == "" {
+		return "", errors.New("cannot get client-id")
+	}
+	return cleintSecret, nil
 }

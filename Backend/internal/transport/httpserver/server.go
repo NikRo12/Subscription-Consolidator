@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/models"
-	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/google"
+	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/email"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/jwt"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/services/task"
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
@@ -25,14 +25,16 @@ type server struct {
 	router      *mux.Router
 	logger      *logrus.Logger
 	store       store.Store
+	authService *email.AuthService
 	taskService *task.TaskService
 }
 
-func newServer(store store.Store, logger *logrus.Logger, redisClient *redis.Client) *server {
+func newServer(store store.Store, logger *logrus.Logger, redisClient *redis.Client, authService *email.AuthService) *server {
 	s := &server{
 		router:      mux.NewRouter(),
 		logger:      logger,
 		store:       store,
+		authService: authService,
 		taskService: task.NewTaskService(*redisClient),
 	}
 
@@ -55,8 +57,7 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 	}
 
 	type response struct {
-		JWT  string      `json:"token"`
-		User models.User `json:"user"`
+		JWT string `json:"token"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +67,7 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		userInfo, err := google.ExchangeAuthCode(r.Context(), req.ServerAuthCode)
+		userInfo, err := s.authService.ExchangeAuthCode(r.Context(), req.ServerAuthCode)
 		if err != nil {
 			s.error(w, r, http.StatusUnauthorized, err)
 			return
@@ -102,19 +103,19 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 		}
 
 		u.Sanitize()
-		s.respond(w, r, http.StatusOK, response{JWT: JWT, User: *u})
+		s.respond(w, r, http.StatusOK, response{JWT: JWT})
 	}
 }
 
 func (s *server) handleSubscriptions() http.HandlerFunc {
 	type currencyTotal struct {
-		TotalMonthlySpend float64 `json:"total_monthly_spend"`
-		Currency          string  `json:"currency"`
+		Amount   float64 `json:"amount"`
+		Currency string  `json:"currency"`
 	}
 
 	type response struct {
-		Totals []*currencyTotal `json:"totals"`
-		Items  []*models.Entry  `json:"items"`
+		MonthlySpend []*currencyTotal `json:"monthly_spend"`
+		Items        []*models.Entry  `json:"items"`
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -141,14 +142,14 @@ func (s *server) handleSubscriptions() http.HandlerFunc {
 		totals := make([]*currencyTotal, 0, len(totalsMap))
 		for currency, amount := range totalsMap {
 			totals = append(totals, &currencyTotal{
-				TotalMonthlySpend: amount,
-				Currency:          currency,
+				Amount:   amount,
+				Currency: currency,
 			})
 		}
 
 		s.respond(w, r, http.StatusOK, response{
-			Totals: totals,
-			Items:  entries,
+			MonthlySpend: totals,
+			Items:        entries,
 		})
 	}
 }

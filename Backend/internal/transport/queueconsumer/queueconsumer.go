@@ -33,6 +33,12 @@ func (qc *QueueConsumer) StartListeninig(ctx context.Context) {
 
 func (qc *QueueConsumer) ParseResult(res models.ParseResult) {
 	userID := res.UserID
+
+	if err := qc.store.Sub().DeleteAllUserSubs(userID); err != nil {
+		qc.logger.Errorf("failed to clear user_subs for user %d: %v", userID, err)
+		return
+	}
+
 	for _, entry := range res.EntryData {
 		sub := models.Subscription{
 			Title:       entry.Title,
