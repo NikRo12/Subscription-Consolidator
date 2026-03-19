@@ -14,7 +14,6 @@ import (
 	"github.com/NikRo12/Subscription-Consolidator/Backend/internal/store"
 	"github.com/gorilla/mux"
 	"github.com/redis/go-redis/v9"
-	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -48,18 +47,14 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) configureRouter() {
-	c := cors.New(cors.Options{
-		AllowedOrigins: []string{
-			"http://localhost:3000",
-			"http://localhost:8081",
-		},
+	s.router.Use(corsMiddleware)
 
-		AllowedMethods: []string{
-			"GET", "POST",
-		},
+	s.router.Methods("OPTIONS").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.WriteHeader(http.StatusOK)
 	})
-
-	s.router.Use(c.Handler)
 
 	s.router.HandleFunc("/auth/google", s.handleGoogleAuth()).Methods("POST")
 	s.router.HandleFunc("/subscriptions", s.authenticateUser(s.handleSubscriptions())).Methods("GET")
@@ -187,6 +182,43 @@ func (s *server) authenticateUser(next http.HandlerFunc) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next(w, r.WithContext(ctx))
 	}
+}
+
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		origin := r.Header.Get("Origin")
+
+		allowedOrigins := map[string]bool{
+			"http://localhost:3000": true,
+			"http://localhost:8081": true,
+			"http://127.0.0.1:3000": true,
+			"http://192.168.0.0/16": true,
+			"http://10.0.0.0/8":     true,
+		}
+
+		if strings.HasPrefix(origin, "http://192.168.") ||
+			strings.HasPrefix(origin, "http://10.") ||
+			strings.HasPrefix(origin, "http://172.") {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		}
+
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+
+		w.Header().Set("Access-Control-Expose-Headers", "*")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (s *server) error(w http.ResponseWriter, r *http.Request, code int, err error) {
