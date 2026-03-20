@@ -26,7 +26,7 @@ func NewAuthService(clientID, clientSecret string) *AuthService {
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			Endpoint:     google.Endpoint,
-			RedirectURL:  "postmessage",
+			RedirectURL:  "",
 			Scopes: []string{
 				"https://www.googleapis.com/auth/gmail.readonly",
 				oauth2GoogleV2.UserinfoProfileScope,
