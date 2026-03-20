@@ -1,19 +1,20 @@
-import { BlurView } from "expo-blur"
+import { LinearGradient } from "expo-linear-gradient"
 import React from "react"
 import { Image, StyleSheet, Text, View } from "react-native"
+import Animated, { FadeInRight } from "react-native-reanimated"
 
 import { useColorScheme } from "@/hooks/use-color-scheme"
 
 import { ThemedText } from "./themed-text"
 
-// Типы для пропсов компонента
 interface BrandCardProps {
   title: string;
   price: number;
   currency: string;
-  paymentDate: string; // Например, "25 окт."
-  brandColor: string; // HEX-код цвета бренда
-  iconUrl: string; // URL иконки
+  paymentDate: string;
+  brandColor: string;
+  iconUrl: string;
+  index?: number;
 }
 
 export const BrandCard: React.FC<BrandCardProps> = ({
@@ -23,88 +24,119 @@ export const BrandCard: React.FC<BrandCardProps> = ({
   paymentDate,
   brandColor,
   iconUrl,
+  index = 0,
 }) => {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === "dark"
 
-  // Создаем полупрозрачные версии brandColor для фона и тени
-  const backgroundColor = `${brandColor}15` // 15 - это примерно 8% прозрачности в HEX
-  const shadowColor = `${brandColor}40` // 40 - это примерно 25% прозрачности в HEX
-
   return (
-    <View style={[styles.shadowWrapper, { shadowColor }]}>
-      <BlurView
-        intensity={isDark ? 40 : 60} // Интенсивность размытия
-        tint={isDark ? "dark" : "light"} // Тон размытия
+    <Animated.View
+      entering={FadeInRight.delay(100 + index * 120).duration(600).springify()}
+      style={[styles.shadowWrapper, { shadowColor: brandColor }]}
+    >
+      <LinearGradient
+        colors={
+          isDark
+            ? [`${brandColor}25`, `${brandColor}08`]
+            : [`${brandColor}18`, `${brandColor}06`]
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={[
           styles.card,
           {
-            borderColor: `${brandColor}80`, // Полупрозрачная обводка цвета бренда
-            backgroundColor: backgroundColor, // Легкий оттенок бренда на фоне
+            borderColor: `${brandColor}40`,
           },
         ]}
       >
-        <View style={styles.header}>
-          <Image source={{ uri: iconUrl }} style={styles.icon} />
-          <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={1}>
-            {title}
-          </ThemedText>
+        <View style={styles.topRow}>
+          <View style={[styles.iconWrapper, { backgroundColor: `${brandColor}20` }]}>
+            <Image source={{ uri: iconUrl }} style={styles.icon} />
+          </View>
+          <View style={styles.titleContainer}>
+            <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={1}>
+              {title}
+            </ThemedText>
+          </View>
         </View>
 
-        <View style={styles.footer}>
-          <ThemedText type="subtitle" style={styles.price}>
-            {price} {currency}
-          </ThemedText>
-          <Text style={[styles.date, { color: isDark ? "#ccc" : "#666" }]}>
-            {paymentDate}
-          </Text>
+        <View style={styles.bottomRow}>
+          <View>
+            <ThemedText style={styles.price}>
+              {price} {currency}
+            </ThemedText>
+            <Text style={[styles.date, { color: isDark ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.4)" }]}>
+              {paymentDate}
+            </Text>
+          </View>
+          <View style={[styles.dot, { backgroundColor: brandColor }]} />
         </View>
-      </BlurView>
-    </View>
+      </LinearGradient>
+    </Animated.View>
   )
 }
 
 const styles = StyleSheet.create({
   shadowWrapper: {
-    // Настройки тени для iOS
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    // Настройки для Android (elevation не поддерживает цветные тени, поэтому эффект будет слабее)
-    elevation: 8,
-    marginHorizontal: 8, // Отступ между карточками в карусели
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 10,
+    marginHorizontal: 6,
   },
   card: {
-    width: 160, // Фиксированная ширина для карусели
-    height: 110, // Фиксированная высота
-    borderRadius: 24,
+    width: 170,
+    height: 120,
+    borderRadius: 22,
     padding: 16,
-    overflow: "hidden", // Обязательно для BlurView и borderRadius
-    borderWidth: 1, // Тонкая грань "стекла"
+    overflow: "hidden",
+    borderWidth: 1,
     justifyContent: "space-between",
   },
-  header: {
+  topRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
+  },
+  iconWrapper: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
   icon: {
     width: 24,
     height: 24,
     borderRadius: 6,
   },
-  title: {
+  titleContainer: {
     flex: 1,
-    fontSize: 14,
   },
-  footer: {
-    gap: 2,
+  title: {
+    fontSize: 14,
+    letterSpacing: -0.2,
+  },
+  bottomRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
   },
   price: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "800",
+    letterSpacing: -0.5,
   },
   date: {
     fontSize: 11,
+    marginTop: 1,
+    fontWeight: "500",
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 4,
   },
 })

@@ -1,14 +1,14 @@
-import { useFocusEffect } from "expo-router"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { Api, SubscriptionsResponse } from "@/api"
 
-export function useSubscriptions() {
+export function useSubscriptions(jwtToken: string | null) {
   const [data, setData] = useState<SubscriptionsResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchSubs = useCallback(async () => {
+    if (!jwtToken) return
     try {
       setIsLoading(true)
       setError(null)
@@ -19,13 +19,16 @@ export function useSubscriptions() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [jwtToken])
 
-  useFocusEffect(
-    useCallback(() => {
+  useEffect(() => {
+    if (jwtToken) {
       fetchSubs()
-    }, [fetchSubs])
-  )
+    } else {
+      setData(null)
+      setError(null)
+    }
+  }, [jwtToken, fetchSubs])
 
   return { data, isLoading, error, refetch: fetchSubs }
 }

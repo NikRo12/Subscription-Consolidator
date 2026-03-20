@@ -15,7 +15,7 @@ try {
   GoogleSignin = m.GoogleSignin
   isSuccessResponse = m.isSuccessResponse
 } catch {
-  // Ignore
+  // Ignore — not available on web
 }
 
 WebBrowser.maybeCompleteAuthSession()
@@ -41,7 +41,6 @@ export function useGoogleAuth() {
     : "https://auth.expo.io/@harvestapp23/mobile"
 
   const [_request, authResponse, promptAsync] = Google.useAuthRequest({
-    // Use Web Client ID for both web and Expo Go environments
     webClientId: Config.google.webClientId,
     iosClientId: GoogleSignin ? Config.google.iosClientId : Config.google.webClientId,
     androidClientId: GoogleSignin ? Config.google.androidClientId : Config.google.webClientId,
@@ -56,7 +55,6 @@ export function useGoogleAuth() {
     redirectUri,
   })
 
-  // Moved up to avoid temporal dead zone
   const exchangeAuth = useCallback(async (value: string, type: "code" | "id_token") => {
     console.log(`[DEBUG] Exchanging ${type} with backend...`)
 
@@ -90,9 +88,10 @@ export function useGoogleAuth() {
   }, [authResponse, exchangeAuth])
 
   useEffect(() => {
-    if (Platform.OS === "android" && GoogleSignin) {
+    if (Platform.OS !== "web" && GoogleSignin) {
       GoogleSignin.configure({
         webClientId: Config.google.webClientId,
+        iosClientId: Config.google.iosClientId,
         offlineAccess: true,
         forceCodeForRefreshToken: true,
       })
@@ -103,6 +102,7 @@ export function useGoogleAuth() {
     try {
       setIsLoading(true)
 
+      // Web or fallback when GoogleSignin not available — use expo-auth-session
       if (Platform.OS === "web" || !GoogleSignin) {
         const response = await promptAsync()
         if (response?.type !== "success") {
@@ -111,8 +111,9 @@ export function useGoogleAuth() {
         return
       }
 
-      if (Platform.OS === "android" && GoogleSignin) {
-        await GoogleSignin.hasPlayServices()
+      // Native (Android + iOS) — use @react-native-google-signin/google-signin
+      if (GoogleSignin) {
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: Platform.OS === "android" })
         const signInResponse = await GoogleSignin.signIn()
         if (isSuccessResponse(signInResponse)) {
           const code = signInResponse.data.serverAuthCode

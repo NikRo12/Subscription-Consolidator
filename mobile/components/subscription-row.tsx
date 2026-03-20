@@ -1,6 +1,7 @@
-import { BlurView } from "expo-blur"
+import { LinearGradient } from "expo-linear-gradient"
 import React from "react"
-import { Image, StyleSheet, View } from "react-native"
+import { Image, Pressable, StyleSheet, View } from "react-native"
+import Animated, { FadeInDown } from "react-native-reanimated"
 
 import { useColorScheme } from "@/hooks/use-color-scheme"
 
@@ -14,7 +15,7 @@ interface SubscriptionRowProps {
   paymentDate: string;
   brandColor: string;
   iconUrl: string;
-  category?: string;
+  index?: number;
 }
 
 export const SubscriptionRow: React.FC<SubscriptionRowProps> = ({
@@ -25,108 +26,136 @@ export const SubscriptionRow: React.FC<SubscriptionRowProps> = ({
   paymentDate,
   brandColor,
   iconUrl,
+  index = 0,
 }) => {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === "dark"
 
   return (
-    <View style={styles.container}>
-      <BlurView
-        intensity={isDark ? 25 : 40}
-        tint={isDark ? "dark" : "light"}
-        style={styles.blurWrapper}
+    <Animated.View
+      entering={FadeInDown.delay(80 + index * 60).duration(500).springify()}
+    >
+      <Pressable
+        style={({ pressed }) => [
+          styles.container,
+          pressed && styles.pressed,
+        ]}
       >
-        {/* Тот самый вертикальный индикатор бренда */}
-        <View style={[styles.brandIndicator, { backgroundColor: brandColor }]} />
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(255,255,255,0.06)", "rgba(255,255,255,0.02)"]
+              : ["rgba(0,0,0,0.03)", "rgba(0,0,0,0.01)"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.gradient}
+        >
+          <View style={[styles.brandStripe, { backgroundColor: brandColor }]} />
 
-        <View style={styles.content}>
-          <View style={styles.leftSection}>
-            <View style={styles.iconWrapper}>
-              <Image source={{ uri: iconUrl }} style={styles.icon} />
-            </View>
-            <ThemedText type="defaultSemiBold" style={styles.title}>
-              {title}
-            </ThemedText>
-          </View>
-
-          <View style={styles.rightSection}>
-            <View style={styles.priceContainer}>
-              <ThemedText type="defaultSemiBold">
-                {price} {currency}
+          <View style={styles.content}>
+            <View style={styles.leftSection}>
+              <View style={[styles.iconWrapper, { backgroundColor: `${brandColor}15` }]}>
+                <Image source={{ uri: iconUrl }} style={styles.icon} />
+              </View>
+              <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={1}>
+                {title}
               </ThemedText>
-              <ThemedText style={styles.period}>/{period}</ThemedText>
             </View>
-            <ThemedText style={styles.date}>
-              {paymentDate}
-            </ThemedText>
+
+            <View style={styles.rightSection}>
+              <View style={styles.priceRow}>
+                <ThemedText style={styles.price}>
+                  {price} {currency}
+                </ThemedText>
+                <ThemedText style={[styles.period, { color: isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)" }]}>
+                  /{period}
+                </ThemedText>
+              </View>
+              <ThemedText style={[styles.date, { color: isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)" }]}>
+                {paymentDate}
+              </ThemedText>
+            </View>
           </View>
-        </View>
-      </BlurView>
-    </View>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 4,
     borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: "rgba(255, 255, 255, 0.07)",
   },
-  blurWrapper: {
+  pressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  gradient: {
     flexDirection: "row",
-    height: 64,
+    height: 68,
     alignItems: "center",
   },
-  brandIndicator: {
-    width: 4,
-    height: "60%", // Не на всю высоту, чтобы выглядело аккуратнее
+  brandStripe: {
+    width: 3.5,
+    height: "55%",
     borderRadius: 2,
-    marginLeft: 4,
+    marginLeft: 5,
   },
   content: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   leftSection: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
+    flex: 1,
   },
   iconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
   },
   icon: {
-    width: "100%",
-    height: "100%",
+    width: 28,
+    height: 28,
+    borderRadius: 6,
   },
   title: {
     fontSize: 16,
+    letterSpacing: -0.2,
+    flex: 1,
   },
   rightSection: {
     alignItems: "flex-end",
+    marginLeft: 8,
   },
-  priceContainer: {
+  priceRow: {
     flexDirection: "row",
     alignItems: "baseline",
   },
+  price: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.3,
+  },
   period: {
     fontSize: 12,
-    opacity: 0.6,
+    fontWeight: "500",
   },
   date: {
     fontSize: 11,
-    opacity: 0.5,
+    fontWeight: "500",
     marginTop: 2,
   },
 })
