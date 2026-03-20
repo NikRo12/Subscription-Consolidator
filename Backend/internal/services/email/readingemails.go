@@ -46,8 +46,8 @@ func ExtractGmailUser(
 	return &gmailUser{gmailService: gService}, nil
 }
 
-func (gu *gmailUser) getMessages(ctx context.Context) ([]*gmail.Message, error) {
-	msgList, err := gu.gmailService.Users.Messages.List("me").Context(ctx).Do()
+func (gu *gmailUser) getMessages() ([]*gmail.Message, error) {
+	msgList, err := gu.gmailService.Users.Messages.List("me").Do()
 
 	if err != nil {
 		return nil, fmt.Errorf("get user's messages list: %w", err)
@@ -59,8 +59,8 @@ func (gu *gmailUser) getMessages(ctx context.Context) ([]*gmail.Message, error) 
 /*
 extract the text of last reqAmount messages
 */
-func (gu *gmailUser) GetEmailsText(ctx context.Context, reqAmount int64) ([]string, error) {
-	messages, err := gu.getMessages(ctx)
+func (gu *gmailUser) GetEmailsText(reqAmount int64) ([]string, error) {
+	messages, err := gu.getMessages()
 
 	if err != nil {
 		return nil, fmt.Errorf("get messages: %w", err)
@@ -77,23 +77,12 @@ func (gu *gmailUser) GetEmailsText(ctx context.Context, reqAmount int64) ([]stri
 	mtx := &sync.Mutex{}
 	wg := &sync.WaitGroup{}
 
-	googleSemaphore := make(chan struct{}, 5)
-
 	for _, msg := range messages[:reqAmount] {
 		wg.Add(1)
 		go func(msgID string) {
 			defer wg.Done()
 
-			select {
-			case <-ctx.Done():
-				log.Printf("Context canceled before fetching msg %s: %v\n", msgID, ctx.Err())
-				return
-			case googleSemaphore <- struct{}{}:
-			}
-
-			defer func() { <-googleSemaphore }()
-
-			fullMsg, err := gu.gmailService.Users.Messages.Get("me", msgID).Format("full").Context(ctx).Do()
+			fullMsg, err := gu.gmailService.Users.Messages.Get("me", msgID).Format("full").Do()
 			if err != nil {
 				log.Printf("cannot fetch message %s: %v\n", msgID, err)
 				return
@@ -108,15 +97,9 @@ func (gu *gmailUser) GetEmailsText(ctx context.Context, reqAmount int64) ([]stri
 			mtx.Lock()
 			extractedEmails = append(extractedEmails, bodyText)
 			mtx.Unlock()
-
 		}(msg.Id)
 	}
-
 	wg.Wait()
-
-	if err := ctx.Err(); err != nil {
-		return nil, fmt.Errorf("fetching emails interrupted: %w", err)
-	}
 
 	return extractedEmails, nil
 }
