@@ -55,7 +55,6 @@ func (s *server) configureRouter() {
 func (s *server) handleGoogleAuth() http.HandlerFunc {
 	type request struct {
 		ServerAuthCode string `json:"serverAuthCode"`
-		RedirectURI    string `json:"redirectUri"`
 	}
 
 	type response struct {
@@ -72,9 +71,9 @@ func (s *server) handleGoogleAuth() http.HandlerFunc {
 			return
 		}
 
-		s.logger.Infof("POST /auth/google: exchanging auth code, redirectURI=%q", req.RedirectURI)
+		s.logger.Infof("POST /auth/google: exchanging auth code, redirectURI=%q", "")
 
-		userInfo, err := s.authService.ExchangeAuthCode(r.Context(), req.ServerAuthCode, req.RedirectURI)
+		userInfo, err := s.authService.ExchangeAuthCode(r.Context(), req.ServerAuthCode, "")
 		if err != nil {
 			s.logger.Errorf("POST /auth/google: failed to exchange auth code: %v", err)
 			s.error(w, r, http.StatusUnauthorized, err)
