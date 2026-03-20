@@ -46,7 +46,11 @@ export function useGoogleAuth() {
     iosClientId: GoogleSignin ? Config.google.iosClientId : Config.google.webClientId,
     androidClientId: GoogleSignin ? Config.google.androidClientId : Config.google.webClientId,
     responseType: "code",
-    scopes: ["openid", "profile", "email"],
+    scopes: ["openid", "profile", "email", "https://www.googleapis.com/auth/gmail.readonly"],
+    extraParams: {
+      access_type: "offline",
+      prompt: "consent",
+    },
     usePKCE: false,
     shouldAutoExchangeCode: false,
     redirectUri,
