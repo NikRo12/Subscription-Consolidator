@@ -52,7 +52,13 @@ export const BrandCard: React.FC<BrandCardProps> = ({
       >
         <View style={styles.topRow}>
           <View style={[styles.iconWrapper, { backgroundColor: `${safeColor}20` }]}>
-            <Image source={{ uri: iconUrl }} style={styles.icon} />
+            {iconUrl ? (
+              <Image source={{ uri: iconUrl }} style={styles.icon} />
+            ) : (
+              <ThemedText style={{ color: safeColor, fontSize: 16, fontWeight: "700" }}>
+                {title.charAt(0).toUpperCase()}
+              </ThemedText>
+            )}
           </View>
           <View style={styles.titleContainer}>
             <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={1}>

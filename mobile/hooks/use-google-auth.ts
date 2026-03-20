@@ -90,6 +90,7 @@ export function useGoogleAuth() {
   useEffect(() => {
     if (Platform.OS !== "web" && GoogleSignin) {
       GoogleSignin.configure({
+        scopes: ["https://www.googleapis.com/auth/gmail.readonly"],
         webClientId: Config.google.webClientId,
         iosClientId: Config.google.iosClientId,
         offlineAccess: true,

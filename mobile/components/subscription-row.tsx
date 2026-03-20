@@ -57,7 +57,13 @@ export const SubscriptionRow: React.FC<SubscriptionRowProps> = ({
           <View style={styles.content}>
             <View style={styles.leftSection}>
               <View style={[styles.iconWrapper, { backgroundColor: `${safeColor}15` }]}>
-                <Image source={{ uri: iconUrl }} style={styles.icon} />
+                {iconUrl ? (
+                  <Image source={{ uri: iconUrl }} style={styles.icon} />
+                ) : (
+                  <ThemedText style={{ color: safeColor, fontSize: 16, fontWeight: "700" }}>
+                    {title.charAt(0).toUpperCase()}
+                  </ThemedText>
+                )}
               </View>
               <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={1}>
                 {title}

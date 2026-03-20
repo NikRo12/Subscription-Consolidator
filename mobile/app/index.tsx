@@ -152,7 +152,7 @@ export default function HomeScreen() {
               >
                 {upcomingSubscriptions.map((subscription, idx) => (
                   <BrandCard
-                    key={subscription.id}
+                    key={`${subscription.id}-${idx}`}
                     title={subscription.title}
                     price={subscription.price}
                     currency={subscription.currency}
@@ -177,7 +177,7 @@ export default function HomeScreen() {
               <View style={styles.listContainer}>
                 {sortedSubscriptions.map((subscription, idx) => (
                   <SubscriptionRow
-                    key={subscription.id}
+                    key={`${subscription.id}-${idx}`}
                     title={subscription.title}
                     price={subscription.price}
                     currency={subscription.currency}
