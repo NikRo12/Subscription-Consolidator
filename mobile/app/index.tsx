@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native"
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { BrandCard } from "@/components/brand-card"
 import { LoginScreen } from "@/components/login-screen"
@@ -26,6 +27,7 @@ const formatPaymentDate = (isoDate: string) =>
   }).format(new Date(isoDate))
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets()
   const { jwtToken, isLoading: authLoading, login, logout, user } = useGoogleAuth()
   const { data, isLoading: subsLoading, error } = useSubscriptions(jwtToken)
 
@@ -85,9 +87,8 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <Animated.View entering={FadeInDown.duration(500).springify()} style={styles.header}>
-          <View style={styles.headerLeft}>
+      <Animated.View entering={FadeInDown.duration(500).springify()} style={[styles.header, { paddingTop: Math.max(insets.top + 8, 16) }]}>
+        <View style={styles.headerLeft}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
                 {user?.name ? user.name[0].toUpperCase() : "?"}
@@ -127,7 +128,7 @@ export default function HomeScreen() {
               >
                 <ThemedText style={styles.spendLabel}>Траты в месяц</ThemedText>
                 {data.monthly_spend.map((spend, idx) => (
-                  <ThemedText key={idx} style={styles.spendAmount}>
+                  <ThemedText key={idx} style={styles.spendAmount} adjustsFontSizeToFit numberOfLines={1}>
                     {spend.amount.toFixed(2)}
                     <ThemedText style={styles.spendCurrency}> {spend.currency}</ThemedText>
                   </ThemedText>
@@ -201,7 +202,6 @@ export default function HomeScreen() {
             </Animated.View>
           )}
         </ScrollView>
-      </SafeAreaView>
     </ThemedView>
   )
 }
@@ -220,7 +220,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 12,
     paddingBottom: 12,
   },
   headerLeft: {
@@ -291,12 +290,13 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   spendAmount: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: "800",
-    letterSpacing: -1,
+    letterSpacing: -0.5,
+    marginTop: 4,
   },
   spendCurrency: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
     opacity: 0.6,
   },
