@@ -30,6 +30,7 @@ export const SubscriptionRow: React.FC<SubscriptionRowProps> = ({
 }) => {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === "dark"
+  const safeColor = brandColor || "#B4B4B4"
 
   return (
     <Animated.View
@@ -51,11 +52,11 @@ export const SubscriptionRow: React.FC<SubscriptionRowProps> = ({
           end={{ x: 1, y: 0 }}
           style={styles.gradient}
         >
-          <View style={[styles.brandStripe, { backgroundColor: brandColor }]} />
+          <View style={[styles.brandStripe, { backgroundColor: safeColor }]} />
 
           <View style={styles.content}>
             <View style={styles.leftSection}>
-              <View style={[styles.iconWrapper, { backgroundColor: `${brandColor}15` }]}>
+              <View style={[styles.iconWrapper, { backgroundColor: `${safeColor}15` }]}>
                 <Image source={{ uri: iconUrl }} style={styles.icon} />
               </View>
               <ThemedText type="defaultSemiBold" style={styles.title} numberOfLines={1}>

@@ -28,29 +28,30 @@ export const BrandCard: React.FC<BrandCardProps> = ({
 }) => {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === "dark"
+  const safeColor = brandColor || "#B4B4B4"
 
   return (
     <Animated.View
       entering={FadeInRight.delay(100 + index * 120).duration(600).springify()}
-      style={[styles.shadowWrapper, { shadowColor: brandColor }]}
+      style={[styles.shadowWrapper, { shadowColor: safeColor }]}
     >
       <LinearGradient
         colors={
           isDark
-            ? [`${brandColor}25`, `${brandColor}08`]
-            : [`${brandColor}18`, `${brandColor}06`]
+            ? [`${safeColor}25`, `${safeColor}08`]
+            : [`${safeColor}18`, `${safeColor}06`]
         }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
           styles.card,
           {
-            borderColor: `${brandColor}40`,
+            borderColor: `${safeColor}40`,
           },
         ]}
       >
         <View style={styles.topRow}>
-          <View style={[styles.iconWrapper, { backgroundColor: `${brandColor}20` }]}>
+          <View style={[styles.iconWrapper, { backgroundColor: `${safeColor}20` }]}>
             <Image source={{ uri: iconUrl }} style={styles.icon} />
           </View>
           <View style={styles.titleContainer}>
@@ -69,7 +70,7 @@ export const BrandCard: React.FC<BrandCardProps> = ({
               {paymentDate}
             </Text>
           </View>
-          <View style={[styles.dot, { backgroundColor: brandColor }]} />
+          <View style={[styles.dot, { backgroundColor: safeColor }]} />
         </View>
       </LinearGradient>
     </Animated.View>
