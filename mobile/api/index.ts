@@ -60,13 +60,13 @@ export type SubscriptionsResponse = {
 
 export const Api = {
   auth: {
-    google: async (serverAuthCode: string, redirectUri?: string) => {
+    google: async (serverAuthCode: string) => {
       const url = `${getBaseUrl()}/auth/google`
       console.log(`[DEBUG] POST ${url}`)
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serverAuthCode, redirectUri }),
+        body: JSON.stringify({ serverAuthCode }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || "Server error")

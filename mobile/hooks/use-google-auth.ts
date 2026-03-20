@@ -59,7 +59,7 @@ export function useGoogleAuth() {
     console.log(`[DEBUG] Exchanging ${type} with backend...`)
 
     try {
-      const data = await Api.auth.google(value, redirectUri)
+      const data = await Api.auth.google(value)
 
       setJwtTokenState(data.token)
       await setToken(data.token)
@@ -70,7 +70,7 @@ export function useGoogleAuth() {
       console.error("[DEBUG] Exchange failed:", e)
       throw e
     }
-  }, [redirectUri])
+  }, [])
 
   useEffect(() => {
     if (authResponse?.type === "success") {
