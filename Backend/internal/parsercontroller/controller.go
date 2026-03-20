@@ -164,7 +164,7 @@ func subroutine(
 - "currency" (string): валюта (например "RUB", "USD")
 - "period" (string): период оплаты (например "monthly", "yearly", "weekly")
 - "category" (string): категория (например "streaming", "software", "music", "gaming")
-- "next_payment_date" (string): дата следующего платежа в формате YYYY-MM-DD, если неизвестна — пустая строка ""
+- "next_payment_date" (string): дата следующего платежа в формате RFC3339, например "2026-04-20T00:00:00Z", если неизвестна — "0001-01-01T00:00:00Z"
 - "icon_url" (string): пустая строка ""
 - "brand_color" (string): пустая строка ""
 - "description" (string): краткое описание подписки
