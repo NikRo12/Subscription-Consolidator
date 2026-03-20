@@ -113,7 +113,8 @@ func subroutine(
 	clientID, clientSecret string,
 	aiSemaphore chan struct{},
 ) {
-	ctx := context.Background()
+	ctx, cancelTask := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancelTask()
 
 	gmailUser, err := email.ExtractGmailUser(ctx, task.RefreshToken, clientID, clientSecret)
 	if err != nil {
@@ -121,9 +122,13 @@ func subroutine(
 		return
 	}
 
-	rawEmails, err := gmailUser.GetEmailsText(150)
+	rawEmails, err := gmailUser.GetEmailsText(ctx, 150)
 	if err != nil {
-		log.Printf("[UserID: %d] cannot fetch emails: %v\n", task.UserID, err)
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			log.Printf("[UserID: %d] ⏱ TIMEOUT: fetching emails took too long\n", task.UserID)
+		} else {
+			log.Printf("[UserID: %d] cannot fetch emails: %v\n", task.UserID, err)
+		}
 		return
 	}
 
@@ -143,7 +148,13 @@ func subroutine(
 		go func(text string) {
 			defer wg.Done()
 
-			aiSemaphore <- struct{}{}
+			select {
+			case <-ctx.Done():
+				log.Printf("[UserID: %d] Task canceled before AI analysis\n", task.UserID)
+				return
+			case aiSemaphore <- struct{}{}:
+			}
+			defer func() { <-aiSemaphore }()
 
 			prompt := fmt.Sprintf(`Извлеки данные о подписке из этого чека.
 Верни строго валидный JSON массив объектов. Каждый объект должен содержать поля:
@@ -159,15 +170,17 @@ func subroutine(
 - "is_active" (bool): true
 Если в тексте нет информации о подписке — верни []. Никаких пояснений, только JSON. Текст: %s`, text)
 
-			ctxTmt, cancelTmt := context.WithTimeout(ctx, 15*time.Second)
+			ctxTmt, cancelTmt := context.WithTimeout(ctx, 20*time.Second)
 			defer cancelTmt()
 
 			aiResponse, err := analyzer.SendPrompt(ctxTmt, prompt)
 
-			<-aiSemaphore
-
 			if err != nil {
-				log.Printf("[UserID: %d] AI analysis failed: %v\n", task.UserID, err)
+				if errors.Is(err, context.DeadlineExceeded) {
+					log.Printf("[UserID: %d] ⏱ TIMEOUT: AI analysis took too long\n", task.UserID)
+				} else {
+					log.Printf("[UserID: %d] AI analysis failed: %v\n", task.UserID, err)
+				}
 				return
 			}
 
@@ -189,11 +202,16 @@ func subroutine(
 
 	wg.Wait()
 
+	log.Printf("[UserID: %d] --user's emails processing is finished--\n", task.UserID)
+
 	if len(allEntries) > 0 {
+		log.Printf("[UserID: %d] --there are %d new subscriptions--\n", task.UserID, len(allEntries))
 		resChan <- &models.ParseResult{
 			UserID:    task.UserID,
 			EntryData: allEntries,
 		}
+	} else {
+		log.Printf("[UserID: %d] --there are absolutely no subscriptions--\n", task.UserID)
 	}
 }
 
