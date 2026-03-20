@@ -46,39 +46,21 @@ func ExtractGmailUser(
 	return &gmailUser{gmailService: gService}, nil
 }
 
-func (gu *gmailUser) getMessages(query string, reqAmount int64) ([]*gmail.Message, error) {
-	var allMessages []*gmail.Message
-	pageToken := ""
+func (gu *gmailUser) getMessages() ([]*gmail.Message, error) {
+	msgList, err := gu.gmailService.Users.Messages.List("me").Do()
 
-	for {
-		req := gu.gmailService.Users.Messages.List("me").Q(query).MaxResults(500)
-
-		if pageToken != "" {
-			req.PageToken(pageToken)
-		}
-
-		msgList, err := req.Do()
-		if err != nil {
-			return nil, fmt.Errorf("get user's messages list: %w", err)
-		}
-
-		allMessages = append(allMessages, msgList.Messages...)
-		pageToken = msgList.NextPageToken
-
-		if pageToken == "" || int64(len(allMessages)) >= reqAmount {
-			break
-		}
+	if err != nil {
+		return nil, fmt.Errorf("get user's messages list: %w", err)
 	}
 
-	if int64(len(allMessages)) > reqAmount {
-		allMessages = allMessages[:reqAmount]
-	}
-
-	return allMessages, nil
+	return msgList.Messages, nil
 }
 
-func (gu *gmailUser) GetEmailsText(reqAmount int64, query string) ([]string, error) {
-	messages, err := gu.getMessages(query, reqAmount)
+/*
+extract the text of last reqAmount messages
+*/
+func (gu *gmailUser) GetEmailsText(reqAmount int64) ([]string, error) {
+	messages, err := gu.getMessages()
 
 	if err != nil {
 		return nil, fmt.Errorf("get messages: %w", err)
@@ -86,8 +68,8 @@ func (gu *gmailUser) GetEmailsText(reqAmount int64, query string) ([]string, err
 
 	msgAmount := int64(len(messages))
 
-	if msgAmount == 0 {
-		return []string{}, nil
+	if msgAmount < reqAmount {
+		reqAmount = msgAmount
 	}
 
 	extractedEmails := make([]string, 0, msgAmount)
@@ -95,15 +77,10 @@ func (gu *gmailUser) GetEmailsText(reqAmount int64, query string) ([]string, err
 	mtx := &sync.Mutex{}
 	wg := &sync.WaitGroup{}
 
-	googleSemaphore := make(chan struct{}, 5)
-
-	for _, msg := range messages {
+	for _, msg := range messages[:reqAmount] {
 		wg.Add(1)
 		go func(msgID string) {
 			defer wg.Done()
-
-			googleSemaphore <- struct{}{}
-			defer func() { <-googleSemaphore }()
 
 			fullMsg, err := gu.gmailService.Users.Messages.Get("me", msgID).Format("full").Do()
 			if err != nil {
@@ -120,10 +97,8 @@ func (gu *gmailUser) GetEmailsText(reqAmount int64, query string) ([]string, err
 			mtx.Lock()
 			extractedEmails = append(extractedEmails, bodyText)
 			mtx.Unlock()
-
 		}(msg.Id)
 	}
-
 	wg.Wait()
 
 	return extractedEmails, nil

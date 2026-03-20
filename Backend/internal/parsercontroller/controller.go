@@ -121,9 +121,7 @@ func subroutine(
 		return
 	}
 
-	searchQuery := filter.BuildSearchQuery()
-
-	rawEmails, err := gmailUser.GetEmailsText(150, searchQuery)
+	rawEmails, err := gmailUser.GetEmailsText(150)
 	if err != nil {
 		log.Printf("[UserID: %d] cannot fetch emails: %v\n", task.UserID, err)
 		return
