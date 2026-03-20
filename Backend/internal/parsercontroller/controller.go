@@ -113,7 +113,6 @@ func subroutine(
 	clientID, clientSecret string,
 	aiSemaphore chan struct{},
 ) {
-	// Устанавливаем жесткий таймаут на ВСЮ обработку задачи (скачивание писем + ИИ)
 	ctx, cancelTask := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancelTask()
 
@@ -149,7 +148,6 @@ func subroutine(
 		go func(text string) {
 			defer wg.Done()
 
-			// Уважаем контекст даже при ожидании семафора ИИ
 			select {
 			case <-ctx.Done():
 				log.Printf("[UserID: %d] Task canceled before AI analysis\n", task.UserID)
